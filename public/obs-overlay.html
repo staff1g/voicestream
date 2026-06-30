@@ -133,7 +133,7 @@
     waveform.classList.remove('idle')
     micIcon.classList.add('playing')
 
-    player.src = `${SERVER}${msg.file_url}`
+    player.src = msg.file_url.startsWith('http') ? msg.file_url : `${SERVER}${msg.file_url}`
     player.play().catch((err) => {
   console.error('Play failed:', err)
   markPlayed(msg.id)
