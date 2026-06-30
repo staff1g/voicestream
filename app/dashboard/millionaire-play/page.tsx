@@ -81,6 +81,17 @@ export default function MillionairePlay() {
     } catch {}
   }
 
+  async function useAudience() {
+    try {
+      await fetch('/api/millionaire/lifeline-audience', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamerUsername: username }),
+      })
+      fetchState(username)
+    } catch {}
+  }
+
   const question = gameState?.question
   const game = gameState?.game
   const eliminated = game?.eliminated_options || []
@@ -115,6 +126,7 @@ export default function MillionairePlay() {
                 50:50
               </button>
               <button
+                onClick={useAudience}
                 disabled={game.used_audience}
                 className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 rounded-full w-16 h-16 flex items-center justify-center text-xs font-semibold"
               >
