@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { username, rewardId } = await request.json()
 
-    if (!username || !rewardId) {
-      return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
+    if (!username) {
+      return NextResponse.json({ error: 'Username manquant' }, { status: 400 })
     }
 
     const { data: streamer } = await supabase
@@ -19,10 +19,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    await supabase
-      .from('streamers')
-      .update({ reward_id: rewardId })
-      .eq('id', streamer.id)
+    if (rewardId) {
+      await supabase
+        .from('streamers')
+        .update({ reward_id: rewardId })
+        .eq('id', streamer.id)
+    }
 
     const subRes = await fetch('https://api.kick.com/public/v1/events/subscriptions', {
       method: 'POST',

@@ -45,16 +45,12 @@ export default function Dashboard() {
   }
 
   async function activateWebhook() {
-    if (!rewardId) {
-      setWebhookStatus({ msg: 'Entre un Reward ID', type: 'error' })
-      return
-    }
     setWebhookStatus({ msg: 'Activation...', type: 'info' })
     try {
       const res = await fetch('/api/streamer/subscribe-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, rewardId }),
+        body: JSON.stringify({ username, rewardId: rewardId || null }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -130,15 +126,15 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Channel Points Reward</h2>
+          <h2 className="text-lg font-semibold mb-2">Activer les events (chat, points, live)</h2>
           <p className="text-gray-400 text-sm mb-3">
-            Cree un reward sur Kick et colle son ID ici pour activer les passes automatiques.
+            Clique sur Activer pour permettre Guess the word et Millionaire de lire le chat. Le Reward ID est optionnel, seulement necessaire pour les voice passes automatiques.
           </p>
           <input
             type="text"
             value={rewardId}
             onChange={(e) => setRewardId(e.target.value)}
-            placeholder="Reward ID"
+            placeholder="Reward ID (optionnel)"
             className="w-full bg-gray-800 rounded-lg p-3 text-sm mb-3 outline-none"
           />
           <button
