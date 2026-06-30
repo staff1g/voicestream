@@ -24,7 +24,7 @@ export async function GET() {
 
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'user:read channel:read events:subscribe channel:write channel_points.write channel_points.read',
+    scope: 'user:read channel:read events:subscribe channel:write channel-points:read channel-points:write',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     state: state,
