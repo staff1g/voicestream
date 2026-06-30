@@ -76,7 +76,7 @@ export default function MillionairePlay() {
         ) : (
           <div className="bg-gray-900 rounded-xl p-8 text-center">
             <p className="text-gray-500 text-sm mb-2">
-              Niveau {game.current_level} - {question.amount}
+              Niveau {game.playing_level} - {question.amount}
             </p>
             <h1 className="text-xl font-semibold mb-8">{question.question_text}</h1>
 
@@ -109,4 +109,4 @@ export default function MillionairePlay() {
       </div>
     </main>
   )
-} 
+}

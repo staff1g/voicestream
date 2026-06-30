@@ -136,13 +136,13 @@
   const qboxEl = document.getElementById('qbox')
   const optionsEl = document.getElementById('options')
 
-  function renderLadder(currentLevel) {
+  function renderLadder(playingLevel) {
     ladderEl.innerHTML = ''
     for (let i = 10; i >= 1; i--) {
       const row = document.createElement('div')
       row.className = 'ladder-row'
       if (i === 10) row.classList.add('top')
-      if (i === currentLevel) row.classList.add('current')
+      if (i === playingLevel) row.classList.add('current')
       row.innerHTML = `<span>${i}</span><span>${AMOUNTS[i - 1]}</span>`
       ladderEl.appendChild(row)
     }
@@ -178,7 +178,7 @@
       const data = await res.json()
       if (data.game && data.question) {
         content.style.display = 'block'
-        renderLadder(data.game.current_level)
+        renderLadder(data.game.playing_level)
         renderQuestion(data.question, data.game.eliminated_options)
         renderLifelines(data.game)
       } else {
