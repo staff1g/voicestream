@@ -18,6 +18,8 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
   const timerRef = useRef<any>(null)
   const chunks = useRef<Blob[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const isRecordingActive = useRef(false)
+  const isSendingRef = useRef(false)
 
   useEffect(() => {
     const name = document.cookie
@@ -40,6 +42,8 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
   }
 
   async function startRecording() {
+    if (isRecordingActive.current) return
+    isRecordingActive.current = true
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       chunks.current = []
@@ -62,6 +66,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
       }, 1000)
     } catch {
       setStatus({ msg: 'Autorise le micro !', type: 'error' })
+      isRecordingActive.current = false
     }
   }
 
@@ -71,6 +76,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
     }
     clearInterval(timerRef.current)
     setRecording(false)
+    isRecordingActive.current = false
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -98,10 +104,12 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
 
   async function sendVoice() {
     if (!audioBlob) return
+    if (isSendingRef.current) return
     if (passes <= 0) {
       setStatus({ msg: 'Tu n as pas de passes disponibles', type: 'error' })
       return
     }
+    isSendingRef.current = true
     setSending(true)
     const form = new FormData()
     form.append('audio', audioBlob, audioBlob instanceof File ? audioBlob.name : 'voice.webm')
@@ -123,6 +131,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
       setStatus({ msg: 'Serveur inaccessible', type: 'error' })
     }
     setSending(false)
+    isSendingRef.current = false
   }
 
   return (
@@ -143,10 +152,10 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
         )}
 
         <button
-          onMouseDown={startRecording}
+          onMouseDown={(e) => { e.preventDefault(); startRecording() }}
           onMouseUp={stopRecording}
           onTouchStart={(e) => { e.preventDefault(); startRecording() }}
-          onTouchEnd={stopRecording}
+          onTouchEnd={(e) => { e.preventDefault(); stopRecording() }}
           disabled={sending || passes <= 0}
           className={`w-24 h-24 rounded-full text-4xl mx-auto mb-4 flex items-center justify-center transition-all ${
             recording
