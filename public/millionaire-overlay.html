@@ -1,34 +1,35 @@
- 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
+  html, body {
     background: transparent;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    width: 1280px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     position: relative;
   }
-  #content { display: none; width: 100%; height: 100%; position: relative; }
+  #content { display: none; width: 100%; height: 100vh; position: relative; }
 
   .ladder {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 260px;
+    top: 2%;
+    right: 2%;
+    width: 20%;
+    min-width: 180px;
   }
   .ladder-row {
-    height: 34px;
+    height: 4vh;
+    min-height: 26px;
     margin-bottom: 2px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
-    font-size: 14px;
+    padding: 0 1vw;
+    font-size: clamp(11px, 1.2vw, 16px);
     color: #e8d28a;
     background: linear-gradient(180deg, #2a4d8f, #0d1b3a);
   }
@@ -45,15 +46,19 @@
 
   .lifelines {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 2%;
+    left: 2%;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 1.5vh;
   }
   .lifeline {
-    width: 70px;
-    height: 70px;
+    width: 5.5vw;
+    height: 5.5vw;
+    max-width: 70px;
+    max-height: 70px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 50%;
     background: #2a2a2a;
     border: 2px solid #555;
@@ -62,43 +67,43 @@
     justify-content: center;
     flex-direction: column;
     color: #fff;
-    font-size: 11px;
+    font-size: clamp(9px, 0.9vw, 12px);
     font-weight: 500;
   }
   .lifeline.used { opacity: 0.25; }
 
   .qbox {
     position: absolute;
-    bottom: 130px;
+    bottom: 18%;
     left: 50%;
     transform: translateX(-50%);
-    width: 900px;
+    width: 70%;
     background: #1a5fb4;
     border: 1.5px solid #fff;
     border-radius: 6px;
-    padding: 16px 24px;
+    padding: 1.5% 2%;
     text-align: center;
     color: #fff;
-    font-size: 18px;
+    font-size: clamp(13px, 1.6vw, 20px);
     font-weight: 500;
   }
 
   .options {
     position: absolute;
-    bottom: 40px;
+    bottom: 4%;
     left: 50%;
     transform: translateX(-50%);
-    width: 900px;
+    width: 70%;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 1%;
   }
   .option {
     background: #e8a23c;
     border-radius: 6px;
-    padding: 14px 20px;
+    padding: 1.2% 1.5%;
     color: #1a1a1a;
-    font-size: 15px;
+    font-size: clamp(11px, 1.3vw, 16px);
     font-weight: 400;
   }
   .option:nth-child(2) { background: #1f7a1f; color: #fff; }
