@@ -1,4 +1,3 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -20,12 +19,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    let { data: game } = await supabase
+    const { data: activeGames } = await supabase
       .from('games')
       .select('id, current_question_index')
       .eq('streamer_id', streamer.id)
       .eq('status', 'active')
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    let game = activeGames?.[0] || null
 
     if (!game) {
       const { data: newGame } = await supabase
