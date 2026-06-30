@@ -31,12 +31,9 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold mb-4">Outils</h2>
 
         <div className="grid grid-cols-2 gap-4">
-          
-            href="/dashboard/voice-messages"
-            className="bg-gray-900 hover:bg-gray-800 rounded-xl p-5 transition-all"
-          >
+          <a href="/dashboard/voice-messages" className="bg-gray-900 hover:bg-gray-800 rounded-xl p-5 transition-all">
             <p className="font-medium text-lg">Voice messages</p>
-            <p className="text-gray-400 text-sm mt-1">Reçois des messages vocaux en direct</p>
+            <p className="text-gray-400 text-sm mt-1">Recois des messages vocaux en direct</p>
           </a>
         </div>
       </div>
