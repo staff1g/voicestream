@@ -1,0 +1,189 @@
+ 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    width: 1280px;
+    height: 720px;
+    overflow: hidden;
+    position: relative;
+  }
+  #content { display: none; width: 100%; height: 100%; position: relative; }
+
+  .ladder {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 260px;
+  }
+  .ladder-row {
+    height: 34px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 14px;
+    color: #e8d28a;
+    background: linear-gradient(180deg, #2a4d8f, #0d1b3a);
+  }
+  .ladder-row.current {
+    background: #e8a23c;
+    color: #1a1a1a;
+    font-weight: 500;
+    border: 1.5px solid #fff;
+  }
+  .ladder-row.top {
+    background: #1f7a1f;
+    color: #fff;
+  }
+
+  .lifelines {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .lifeline {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    border: 2px solid #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .lifeline.used { opacity: 0.25; }
+
+  .qbox {
+    position: absolute;
+    bottom: 130px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    background: #1a5fb4;
+    border: 1.5px solid #fff;
+    border-radius: 6px;
+    padding: 16px 24px;
+    text-align: center;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  .options {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .option {
+    background: #e8a23c;
+    border-radius: 6px;
+    padding: 14px 20px;
+    color: #1a1a1a;
+    font-size: 15px;
+    font-weight: 400;
+  }
+  .option:nth-child(2) { background: #1f7a1f; color: #fff; }
+  .option.eliminated { opacity: 0.15; }
+</style>
+</head>
+<body>
+
+<div id="content">
+  <div class="lifelines">
+    <div class="lifeline" id="ll-5050">50/50</div>
+    <div class="lifeline" id="ll-audience">Public</div>
+    <div class="lifeline" id="ll-phone">Ami</div>
+  </div>
+
+  <div class="ladder" id="ladder"></div>
+
+  <div class="qbox" id="qbox"></div>
+  <div class="options" id="options"></div>
+</div>
+
+<script>
+  const STREAMER = new URLSearchParams(window.location.search).get('streamer')
+  const SERVER = new URLSearchParams(window.location.search).get('server') || window.location.origin
+
+  const AMOUNTS = ['1 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '1 000 000']
+
+  const content = document.getElementById('content')
+  const ladderEl = document.getElementById('ladder')
+  const qboxEl = document.getElementById('qbox')
+  const optionsEl = document.getElementById('options')
+
+  function renderLadder(currentLevel) {
+    ladderEl.innerHTML = ''
+    for (let i = 10; i >= 1; i--) {
+      const row = document.createElement('div')
+      row.className = 'ladder-row'
+      if (i === 10) row.classList.add('top')
+      if (i === currentLevel) row.classList.add('current')
+      row.innerHTML = `<span>${i}</span><span>${AMOUNTS[i - 1]}</span>`
+      ladderEl.appendChild(row)
+    }
+  }
+
+  function renderQuestion(question, eliminated) {
+    qboxEl.textContent = question.question_text
+    optionsEl.innerHTML = ''
+    const opts = [
+      { key: 'A', text: question.option_a },
+      { key: 'B', text: question.option_b },
+      { key: 'C', text: question.option_c },
+      { key: 'D', text: question.option_d },
+    ]
+    opts.forEach(o => {
+      const div = document.createElement('div')
+      div.className = 'option'
+      if (eliminated && eliminated.includes(o.key)) div.classList.add('eliminated')
+      div.textContent = `${o.key}: ${o.text}`
+      optionsEl.appendChild(div)
+    })
+  }
+
+  function renderLifelines(game) {
+    document.getElementById('ll-5050').classList.toggle('used', game.used_5050)
+    document.getElementById('ll-audience').classList.toggle('used', game.used_audience)
+    document.getElementById('ll-phone').classList.toggle('used', game.used_phone)
+  }
+
+  async function fetchState() {
+    try {
+      const res = await fetch(`${SERVER}/api/millionaire/${STREAMER}/current`)
+      const data = await res.json()
+      if (data.game && data.question) {
+        content.style.display = 'block'
+        renderLadder(data.game.current_level)
+        renderQuestion(data.question, data.game.eliminated_options)
+        renderLifelines(data.game)
+      } else {
+        content.style.display = 'none'
+      }
+    } catch {}
+  }
+
+  fetchState()
+  setInterval(fetchState, 3000)
+</script>
+</body>
+</html>
