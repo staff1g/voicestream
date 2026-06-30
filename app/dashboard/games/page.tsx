@@ -1,18 +1,18 @@
- 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function GamesDashboard() {
   const [username, setUsername] = useState('')
-  const [questions, setQuestions] = useState(
-    Array.from({ length: 10 }, () => ({ answer: '', hint: '' }))
-  )
-  const [creating, setCreating] = useState(false)
-  const [activeGame, setActiveGame] = useState<any>(null)
+  const [answer, setAnswer] = useState('')
+  const [hint, setHint] = useState('')
+  const [gameId, setGameId] = useState<string | null>(null)
+  const [gameState, setGameState] = useState<any>(null)
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
+  const pollRef = useRef<any>(null)
 
   useEffect(() => {
     const name = document.cookie
@@ -27,111 +27,132 @@ export default function GamesDashboard() {
     setUsername(decodeURIComponent(name))
   }, [])
 
-  function updateQuestion(index: number, field: 'answer' | 'hint', value: string) {
-    const updated = [...questions]
-    updated[index] = { ...updated[index], [field]: value }
-    setQuestions(updated)
+  useEffect(() => {
+    if (!gameId) return
+    fetchGameState()
+    pollRef.current = setInterval(fetchGameState, 3000)
+    return () => clearInterval(pollRef.current)
+  }, [gameId])
+
+  async function fetchGameState() {
+    if (!gameId) return
+    const res = await fetch(`/api/games/${gameId}/current`)
+    const data = await res.json()
+    setGameState(data)
   }
 
-  async function createAndStartGame() {
-    const filled = questions.filter(q => q.answer.trim())
-    if (filled.length === 0) {
-      setStatus({ msg: 'Remplis au moins une question', type: 'error' })
+  async function launchQuestion() {
+    if (!answer.trim()) {
+      setStatus({ msg: 'Entre une reponse', type: 'error' })
       return
     }
-
-    setCreating(true)
+    setSubmitting(true)
     try {
-      const createRes = await fetch('/api/games/create', {
+      const res = await fetch('/api/games/add-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ streamerUsername: username, questions: filled }),
+        body: JSON.stringify({ streamerUsername: username, answer, hint }),
       })
-      const createData = await createRes.json()
-
-      if (!createRes.ok) {
-        setStatus({ msg: createData.error || 'Erreur', type: 'error' })
-        setCreating(false)
-        return
-      }
-
-      const startRes = await fetch('/api/games/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId: createData.gameId }),
-      })
-
-      if (startRes.ok) {
-        setStatus({ msg: 'Game lance !', type: 'success' })
-        setActiveGame({ id: createData.gameId })
+      const data = await res.json()
+      if (res.ok) {
+        setGameId(data.gameId)
+        setAnswer('')
+        setHint('')
+        setStatus(null)
+      } else {
+        setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }
     } catch {
       setStatus({ msg: 'Erreur serveur', type: 'error' })
     }
-    setCreating(false)
+    setSubmitting(false)
   }
 
-  const overlayUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/game-overlay.html?streamer=${username}&server=${window.location.origin}`
-    : ''
+  function endGame() {
+    clearInterval(pollRef.current)
+    setGameId(null)
+    setGameState(null)
+  }
+
+  const question = gameState?.question
+  const answeredCount = question?.answered_by ? 1 : 0
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Guess the word</h1>
           <span className="text-gray-400">@{username}</span>
         </div>
 
+        {question && !question.answered_by && (
+          <div className="bg-gray-900 rounded-xl p-8 mb-6 text-center">
+            <p className="text-gray-500 text-sm mb-2">Question en cours</p>
+            <h1 className="text-5xl font-bold tracking-widest mb-4">
+              {'★ '.repeat(question.length).trim()}
+            </h1>
+            {question.hint && (
+              <p className="text-gray-400">Indice: {question.hint}</p>
+            )}
+            <p className="text-gray-600 text-sm mt-4">En attente d une bonne reponse dans le chat...</p>
+          </div>
+        )}
+
+        {question && question.answered_by && (
+          <div className="bg-green-900/30 border border-green-700 rounded-xl p-6 mb-6 text-center">
+            <p className="text-green-400 font-semibold text-lg">{question.answered_by} a trouve la reponse !</p>
+          </div>
+        )}
+
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>
-          <p className="text-gray-400 text-sm mb-3">Copie ce lien dans OBS :</p>
-          <div className="bg-gray-800 rounded-lg p-3 font-mono text-sm text-purple-400 break-all">
-            {overlayUrl}
-          </div>
-        </div>
-
-        <div className="bg-gray-900 rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-4">Cree ton quiz (10 questions)</h2>
-
-          <div className="space-y-3 mb-6">
-            {questions.map((q, i) => (
-              <div key={i} className="flex gap-2">
-                <span className="text-gray-500 text-sm w-6 pt-3">{i + 1}</span>
-                <input
-                  type="text"
-                  value={q.answer}
-                  onChange={(e) => updateQuestion(i, 'answer', e.target.value)}
-                  placeholder="Reponse secrete"
-                  className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none"
-                />
-                <input
-                  type="text"
-                  value={q.hint}
-                  onChange={(e) => updateQuestion(i, 'hint', e.target.value)}
-                  placeholder="Indice (optionnel)"
-                  className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none"
-                />
-              </div>
-            ))}
-          </div>
-
+          <h2 className="text-lg font-semibold mb-4">
+            {question ? 'Question suivante' : 'Lancer une question'}
+          </h2>
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Reponse secrete"
+            className="w-full bg-gray-800 rounded-lg p-3 text-sm outline-none mb-3"
+          />
+          <input
+            type="text"
+            value={hint}
+            onChange={(e) => setHint(e.target.value)}
+            placeholder="Indice (optionnel)"
+            className="w-full bg-gray-800 rounded-lg p-3 text-sm outline-none mb-3"
+          />
           <button
-            onClick={createAndStartGame}
-            disabled={creating}
+            onClick={launchQuestion}
+            disabled={submitting}
             className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold disabled:opacity-50"
           >
-            {creating ? 'Lancement...' : 'Lancer le quiz'}
+            {submitting ? 'Lancement...' : 'Lancer cette question'}
           </button>
-
           {status && (
-            <div className={`rounded-xl p-3 text-sm mt-4 ${
-              status.type === 'success' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
-            }`}>
-              {status.msg}
-            </div>
+            <p className="text-red-400 text-sm mt-3">{status.msg}</p>
           )}
         </div>
+
+        {gameState?.scores?.length > 0 && (
+          <div className="bg-gray-900 rounded-xl p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-3">Classement</h2>
+            <div className="space-y-2">
+              {gameState.scores.map((s: any, i: number) => (
+                <div key={s.chatter_username} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                  <span>{i + 1}. {s.chatter_username}</span>
+                  <span className="text-purple-400 font-medium">{s.points} pts</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {gameId && (
+          <button onClick={endGame} className="text-sm text-gray-500 hover:text-white">
+            Terminer le quiz
+          </button>
+        )}
       </div>
     </main>
   )
