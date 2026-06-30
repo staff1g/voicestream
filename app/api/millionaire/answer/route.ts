@@ -53,7 +53,13 @@ export async function POST(request: NextRequest) {
     } else {
       await supabase
         .from('millionaire_games')
-        .update({ playing_level: game.playing_level + 1 })
+        .update({
+          playing_level: game.playing_level + 1,
+          used_5050: false,
+          used_audience: false,
+          used_phone: false,
+          eliminated_options: [],
+        })
         .eq('id', game.id)
     }
 
