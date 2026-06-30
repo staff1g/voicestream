@@ -109,7 +109,7 @@ export default function GamesDashboard() {
             {question ? 'Question suivante' : 'Lancer une question'}
           </h2>
           <input
-            type="text"
+            type="password"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Reponse secrete"
