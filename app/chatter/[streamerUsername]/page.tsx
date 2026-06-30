@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { useState, useRef, useEffect, use } from 'react'
@@ -18,6 +17,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const timerRef = useRef<any>(null)
   const chunks = useRef<Blob[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const name = document.cookie
@@ -73,6 +73,29 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
     setRecording(false)
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('audio/')) {
+      setStatus({ msg: 'Choisis un fichier audio', type: 'error' })
+      return
+    }
+
+    const url = URL.createObjectURL(file)
+    const audio = new Audio(url)
+    audio.onloadedmetadata = () => {
+      if (audio.duration > 30) {
+        setStatus({ msg: 'Le fichier doit faire 30 secondes maximum', type: 'error' })
+        URL.revokeObjectURL(url)
+        return
+      }
+      setAudioBlob(file)
+      setAudioUrl(url)
+      setStatus(null)
+    }
+  }
+
   async function sendVoice() {
     if (!audioBlob) return
     if (passes <= 0) {
@@ -81,7 +104,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
     }
     setSending(true)
     const form = new FormData()
-    form.append('audio', audioBlob, 'voice.webm')
+    form.append('audio', audioBlob, audioBlob instanceof File ? audioBlob.name : 'voice.webm')
     form.append('streamer', streamerUsername)
     form.append('chatter_username', chatterUsername)
 
@@ -125,7 +148,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
           onTouchStart={(e) => { e.preventDefault(); startRecording() }}
           onTouchEnd={stopRecording}
           disabled={sending || passes <= 0}
-          className={`w-24 h-24 rounded-full text-4xl mx-auto mb-6 flex items-center justify-center transition-all ${
+          className={`w-24 h-24 rounded-full text-4xl mx-auto mb-4 flex items-center justify-center transition-all ${
             recording
               ? 'bg-red-500 animate-pulse'
               : passes <= 0
@@ -134,6 +157,27 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
           }`}
         >
           {recording ? 'Stop' : 'Mic'}
+        </button>
+
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px bg-gray-800"></div>
+          <span className="text-gray-600 text-xs">ou</span>
+          <div className="flex-1 h-px bg-gray-800"></div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={sending || passes <= 0}
+          className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium mb-4 disabled:opacity-50"
+        >
+          Choisir un fichier audio
         </button>
 
         {audioUrl && (
@@ -160,7 +204,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
           </div>
         )}
 
-        <p className="text-gray-600 text-xs mt-6">Max 10 secondes</p>
+        <p className="text-gray-600 text-xs mt-6">Enregistrement: 10s max - Fichier: 30s max</p>
       </div>
     </main>
   )

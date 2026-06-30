@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
 
+    if (audio.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Fichier trop volumineux (max 10MB)' }, { status: 400 })
+    }
+
     const { data: streamer } = await supabase
       .from('streamers')
       .select('id')
@@ -22,7 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    // Check chatter & passes
     const { data: chatter } = await supabase
       .from('chatters')
       .select('id')
@@ -43,7 +46,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Aucun pass disponible' }, { status: 403 })
       }
 
-      // Decrement pass
       await supabase
         .from('chatter_passes')
         .update({ passes: currentPasses - 1 })
@@ -51,13 +53,13 @@ export async function POST(request: NextRequest) {
         .eq('streamer_id', streamer.id)
     }
 
-    // Upload audio
-    const filename = `voice_${Date.now()}.webm`
+    const ext = audio.name?.split('.').pop() || 'webm'
+    const filename = `voice_${Date.now()}.${ext}`
     const bytes = await audio.arrayBuffer()
 
     const { error: uploadError } = await supabase.storage
       .from('voice-messages')
-      .upload(filename, bytes, { contentType: 'audio/webm' })
+      .upload(filename, bytes, { contentType: audio.type || 'audio/webm' })
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
