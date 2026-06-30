@@ -95,12 +95,15 @@ async function handleChatMessage(body: any) {
     return
   }
 
-  const { data: game } = await supabase
+  const { data: games } = await supabase
     .from('games')
     .select('id, current_question_index')
     .eq('streamer_id', streamer.id)
     .eq('status', 'active')
-    .single()
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  const game = games?.[0]
 
   if (!game) {
     console.log('No active game')
@@ -148,20 +151,11 @@ async function handleChatMessage(body: any) {
         .insert({ game_id: game.id, chatter_username: senderUsername, points: 1 })
     }
 
-    const { data: totalQuestions } = await supabase
-      .from('game_questions')
-      .select('id', { count: 'exact' })
-      .eq('game_id', game.id)
-
     const nextIndex = game.current_question_index + 1
-    const isFinished = nextIndex >= (totalQuestions?.length || 0)
 
     await supabase
       .from('games')
-      .update({
-        current_question_index: nextIndex,
-        status: isFinished ? 'finished' : 'active',
-      })
+      .update({ current_question_index: nextIndex })
       .eq('id', game.id)
   }
 }
