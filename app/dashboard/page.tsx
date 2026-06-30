@@ -43,6 +43,10 @@ export default function Dashboard() {
             <p className="font-medium text-lg">Chatter statistics</p>
             <p className="text-gray-400 text-sm mt-1">Voir l activite de tes chatters</p>
           </a>
+          <a href="/dashboard/millionaire" className="bg-gray-900 hover:bg-gray-800 rounded-xl p-5 transition-all">
+            <p className="font-medium text-lg">Qui veut gagner des millions</p>
+            <p className="text-gray-400 text-sm mt-1">Quiz personnel avec overlay OBS</p>
+          </a>
         </div>
       </div>
     </main>
