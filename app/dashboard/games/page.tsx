@@ -68,14 +68,18 @@ export default function GamesDashboard() {
     setSubmitting(false)
   }
 
-  function endGame() {
+  async function endGame() {
+    await fetch('/api/games/end', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ streamerUsername: username }),
+    })
     clearInterval(pollRef.current)
     setGameId(null)
     setGameState(null)
   }
 
   const question = gameState?.question
-  const answeredCount = question?.answered_by ? 1 : 0
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
@@ -150,7 +154,7 @@ export default function GamesDashboard() {
 
         {gameId && (
           <button onClick={endGame} className="text-sm text-gray-500 hover:text-white">
-            Terminer le quiz
+            Reinitialiser le jeu
           </button>
         )}
       </div>
