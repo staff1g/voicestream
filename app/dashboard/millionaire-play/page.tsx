@@ -70,6 +70,17 @@ export default function MillionairePlay() {
     setUsing5050(false)
   }
 
+  async function usePhone() {
+    try {
+      await fetch('/api/millionaire/lifeline-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamerUsername: username }),
+      })
+      fetchState(username)
+    } catch {}
+  }
+
   const question = gameState?.question
   const game = gameState?.game
   const eliminated = game?.eliminated_options || []
@@ -110,6 +121,7 @@ export default function MillionairePlay() {
                 Public
               </button>
               <button
+                onClick={usePhone}
                 disabled={game.used_phone}
                 className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 rounded-full w-16 h-16 flex items-center justify-center text-xs font-semibold"
               >
