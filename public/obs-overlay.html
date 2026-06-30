@@ -134,7 +134,10 @@
     micIcon.classList.add('playing')
 
     player.src = `${SERVER}${msg.file_url}`
-    player.play().catch(() => markPlayed(msg.id))
+    player.play().catch((err) => {
+  console.error('Play failed:', err)
+  markPlayed(msg.id)
+})
     player.onended = () => markPlayed(msg.id)
   }
 
