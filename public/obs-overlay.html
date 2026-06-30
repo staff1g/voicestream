@@ -112,6 +112,7 @@
   let playing = false
   let queue = []
   let playedIds = new Set()
+  let markingPlayed = new Set()
   let fetchingNow = false
 
   async function fetchQueue() {
@@ -120,7 +121,7 @@
     try {
       const res = await fetch(`${SERVER}/api/queue?username=${STREAMER}`)
       const data = await res.json()
-      queue = (data.queue || []).filter(m => !playedIds.has(m.id))
+      queue = (data.queue || []).filter(m => !playedIds.has(m.id) && !markingPlayed.has(m.id))
       if (!playing) playNext()
     } catch {}
     fetchingNow = false
@@ -130,14 +131,13 @@
     if (playing || queue.length === 0) return
     const msg = queue[0]
 
-    if (playedIds.has(msg.id)) {
+    if (playedIds.has(msg.id) || markingPlayed.has(msg.id)) {
       queue.shift()
       playNext()
       return
     }
 
     playing = true
-    playedIds.add(msg.id)
 
     usernameEl.textContent = msg.chatter_username
     popup.style.display = 'block'
@@ -152,6 +152,9 @@
   }
 
   async function markPlayed(id) {
+    if (markingPlayed.has(id) || playedIds.has(id)) return
+    markingPlayed.add(id)
+
     waveform.classList.add('idle')
     micIcon.classList.remove('playing')
     popup.classList.add('hiding')
@@ -160,11 +163,21 @@
     playing = false
     queue = queue.filter(m => m.id !== id)
 
-    await fetch(`${SERVER}/api/voice/played`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    }).catch(() => {})
+    let success = false
+    for (let attempt = 0; attempt < 3 && !success; attempt++) {
+      try {
+        const res = await fetch(`${SERVER}/api/voice/played`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        })
+        if (res.ok) success = true
+      } catch {}
+      if (!success) await new Promise(r => setTimeout(r, 500))
+    }
+
+    playedIds.add(id)
+    markingPlayed.delete(id)
 
     setTimeout(playNext, 1000)
   }
