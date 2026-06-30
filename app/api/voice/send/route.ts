@@ -22,6 +22,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
+    // Check chatter & passes
+    const { data: chatter } = await supabase
+      .from('chatters')
+      .select('id')
+      .ilike('username', chatterUsername)
+      .single()
+
+    if (chatter) {
+      const { data: passRecord } = await supabase
+        .from('chatter_passes')
+        .select('passes')
+        .eq('chatter_id', chatter.id)
+        .eq('streamer_id', streamer.id)
+        .single()
+
+      const currentPasses = passRecord?.passes || 0
+
+      if (currentPasses <= 0) {
+        return NextResponse.json({ error: 'Aucun pass disponible' }, { status: 403 })
+      }
+
+      // Decrement pass
+      await supabase
+        .from('chatter_passes')
+        .update({ passes: currentPasses - 1 })
+        .eq('chatter_id', chatter.id)
+        .eq('streamer_id', streamer.id)
+    }
+
+    // Upload audio
     const filename = `voice_${Date.now()}.webm`
     const bytes = await audio.arrayBuffer()
 
@@ -38,7 +68,7 @@ export async function POST(request: NextRequest) {
       .from('voice-messages')
       .getPublicUrl(filename)
 
-    const { error: insertError } = await supabase
+    await supabase
       .from('voice_queue')
       .insert({
         streamer_id: streamer.id,
@@ -47,11 +77,6 @@ export async function POST(request: NextRequest) {
         file_url: urlData.publicUrl,
         played: false,
       })
-
-    if (insertError) {
-      console.error('Insert error:', insertError)
-      return NextResponse.json({ error: `DB: ${insertError.message}` }, { status: 500 })
-    }
 
     const { count } = await supabase
       .from('voice_queue')
