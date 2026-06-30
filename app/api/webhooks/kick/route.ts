@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
 
     if (eventType === 'chat.message.sent') {
       await handleChatMessage(body)
+      await handleChatActivity(body)
+      return NextResponse.json({ received: true })
+    }
+
+    if (eventType === 'livestream.status.updated') {
+      await handleStreamStatus(body)
       return NextResponse.json({ received: true })
     }
 
@@ -80,8 +86,6 @@ async function handleChatMessage(body: any) {
   const senderUsername = body.sender?.username
   const content = (body.content || '').trim().toLowerCase()
 
-  console.log('CHAT MSG:', senderUsername, '->', JSON.stringify(content))
-
   if (!content || !senderUsername) return
 
   const { data: streamer } = await supabase
@@ -90,10 +94,7 @@ async function handleChatMessage(body: any) {
     .eq('kick_user_id', broadcasterChannelId)
     .single()
 
-  if (!streamer) {
-    console.log('Streamer not found for', broadcasterChannelId)
-    return
-  }
+  if (!streamer) return
 
   const { data: games } = await supabase
     .from('games')
@@ -104,11 +105,7 @@ async function handleChatMessage(body: any) {
     .limit(1)
 
   const game = games?.[0]
-
-  if (!game) {
-    console.log('No active game')
-    return
-  }
+  if (!game) return
 
   const { data: question } = await supabase
     .from('game_questions')
@@ -117,16 +114,9 @@ async function handleChatMessage(body: any) {
     .eq('order_index', game.current_question_index)
     .single()
 
-  if (!question || question.answered_by) {
-    console.log('No active question or already answered')
-    return
-  }
-
-  console.log('Comparing:', JSON.stringify(content), 'vs', JSON.stringify(question.secret_answer))
+  if (!question || question.answered_by) return
 
   if (content === question.secret_answer) {
-    console.log('MATCH! Winner:', senderUsername)
-
     await supabase
       .from('game_questions')
       .update({ answered_by: senderUsername, answered_at: new Date().toISOString() })
@@ -157,5 +147,66 @@ async function handleChatMessage(body: any) {
       .from('games')
       .update({ current_question_index: nextIndex })
       .eq('id', game.id)
+  }
+}
+
+async function handleChatActivity(body: any) {
+  const broadcasterChannelId = String(body.broadcaster?.user_id)
+  const senderUsername = body.sender?.username
+  const content = body.content || ''
+
+  if (!senderUsername) return
+
+  const { data: streamer } = await supabase
+    .from('streamers')
+    .select('id')
+    .eq('kick_user_id', broadcasterChannelId)
+    .single()
+
+  if (!streamer) return
+
+  const { data: sessions } = await supabase
+    .from('stream_sessions')
+    .select('id')
+    .eq('streamer_id', streamer.id)
+    .is('ended_at', null)
+    .order('started_at', { ascending: false })
+    .limit(1)
+
+  const session = sessions?.[0]
+  if (!session) return
+
+  await supabase
+    .from('chat_activity')
+    .insert({
+      streamer_id: streamer.id,
+      session_id: session.id,
+      chatter_username: senderUsername,
+      message_content: content,
+    })
+}
+
+async function handleStreamStatus(body: any) {
+  const broadcasterChannelId = String(body.broadcaster?.user_id)
+  const isLive = body.is_live
+
+  const { data: streamer } = await supabase
+    .from('streamers')
+    .select('id')
+    .eq('kick_user_id', broadcasterChannelId)
+    .single()
+
+  if (!streamer) return
+
+  if (isLive) {
+    await supabase
+      .from('stream_sessions')
+      .insert({ streamer_id: streamer.id })
+  } else {
+    await supabase
+      .from('stream_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('streamer_id', streamer.id)
+      .is('ended_at', null)
   }
 }
