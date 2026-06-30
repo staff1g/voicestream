@@ -10,17 +10,10 @@ export default function Home() {
         </p>
 
         <div className="space-y-4">
-          
-            href="/api/auth/kick"
-            className="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all"
-          >
+          <a href="/api/auth/kick" className="block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all">
             Je suis streamer
           </a>
-
-          
-            href="/api/auth/chatter"
-            className="block bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all"
-          >
+          <a href="/api/auth/chatter" className="block bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all">
             Je suis chatter
           </a>
         </div>
