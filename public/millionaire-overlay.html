@@ -99,15 +99,16 @@
     gap: 1%;
   }
   .option {
-    background: #e8a23c;
+    background: #1a3a6b;
+    color: #e8d28a;
     border-radius: 6px;
     padding: 1.2% 1.5%;
-    color: #1a1a1a;
     font-size: clamp(11px, 1.3vw, 16px);
     font-weight: 400;
   }
-  .option:nth-child(2) { background: #1f7a1f; color: #fff; }
   .option.eliminated { opacity: 0.15; }
+  .option.correct { background: #1f7a1f; color: #fff; }
+  .option.wrong { background: #a32d2d; color: #fff; }
 </style>
 </head>
 <body>
@@ -148,7 +149,7 @@
     }
   }
 
-  function renderQuestion(question, eliminated) {
+  function renderQuestion(question, eliminated, lastChosen, lastStatus) {
     qboxEl.textContent = question.question_text
     optionsEl.innerHTML = ''
     const opts = [
@@ -160,7 +161,15 @@
     opts.forEach(o => {
       const div = document.createElement('div')
       div.className = 'option'
-      if (eliminated && eliminated.includes(o.key)) div.classList.add('eliminated')
+      if (eliminated && eliminated.includes(o.key)) {
+        div.classList.add('eliminated')
+      } else if (lastChosen && lastStatus) {
+        if (o.key === question.correct_option) {
+          div.classList.add('correct')
+        } else if (o.key === lastChosen && lastStatus === 'wrong') {
+          div.classList.add('wrong')
+        }
+      }
       div.textContent = `${o.key}: ${o.text}`
       optionsEl.appendChild(div)
     })
@@ -179,7 +188,7 @@
       if (data.game && data.question) {
         content.style.display = 'block'
         renderLadder(data.game.playing_level)
-        renderQuestion(data.question, data.game.eliminated_options)
+        renderQuestion(data.question, data.game.eliminated_options, data.game.last_chosen_option, data.game.last_answer_status)
         renderLifelines(data.game)
       } else {
         content.style.display = 'none'

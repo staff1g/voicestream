@@ -45,19 +45,33 @@ export async function POST(request: NextRequest) {
 
     const isCorrect = chosenOption === question.correct_option
 
+    await supabase
+      .from('millionaire_games')
+      .update({
+        last_chosen_option: chosenOption,
+        last_answer_status: isCorrect ? 'correct' : 'wrong',
+      })
+      .eq('id', game.id)
+
     if (!isCorrect) {
-      await supabase
-        .from('millionaire_games')
-        .update({ status: 'finished' })
-        .eq('id', game.id)
+      setTimeout(async () => {
+        await supabase
+          .from('millionaire_games')
+          .update({ status: 'finished' })
+          .eq('id', game.id)
+      }, 3000)
     } else {
-      await supabase
-        .from('millionaire_games')
-        .update({
-          playing_level: game.playing_level + 1,
-          eliminated_options: [],
-        })
-        .eq('id', game.id)
+      setTimeout(async () => {
+        await supabase
+          .from('millionaire_games')
+          .update({
+            playing_level: game.playing_level + 1,
+            eliminated_options: [],
+            last_chosen_option: null,
+            last_answer_status: null,
+          })
+          .eq('id', game.id)
+      }, 3000)
     }
 
     return NextResponse.json({
