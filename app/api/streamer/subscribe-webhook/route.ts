@@ -19,13 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    // Save reward ID
     await supabase
       .from('streamers')
       .update({ reward_id: rewardId })
       .eq('id', streamer.id)
 
-    // Subscribe to webhook events
     const subRes = await fetch('https://api.kick.com/public/v1/events/subscriptions', {
       method: 'POST',
       headers: {
@@ -33,7 +31,10 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        events: [{ name: 'channel.reward.redemption.updated', version: 1 }],
+        events: [
+          { name: 'channel.reward.redemption.updated', version: 1 },
+          { name: 'chat.message.sent', version: 1 },
+        ],
         method: 'webhook',
         broadcaster_user_id: Number(streamer.kick_user_id),
       }),
@@ -51,4 +52,4 @@ export async function POST(request: NextRequest) {
     console.error('Subscribe error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}
