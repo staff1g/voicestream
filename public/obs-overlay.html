@@ -1,4 +1,3 @@
- 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -112,20 +111,33 @@
 
   let playing = false
   let queue = []
+  let playedIds = new Set()
+  let fetchingNow = false
 
   async function fetchQueue() {
+    if (fetchingNow) return
+    fetchingNow = true
     try {
       const res = await fetch(`${SERVER}/api/queue?username=${STREAMER}`)
       const data = await res.json()
-      queue = data.queue || []
+      queue = (data.queue || []).filter(m => !playedIds.has(m.id))
       if (!playing) playNext()
     } catch {}
+    fetchingNow = false
   }
 
   async function playNext() {
     if (playing || queue.length === 0) return
     const msg = queue[0]
+
+    if (playedIds.has(msg.id)) {
+      queue.shift()
+      playNext()
+      return
+    }
+
     playing = true
+    playedIds.add(msg.id)
 
     usernameEl.textContent = msg.chatter_username
     popup.style.display = 'block'
@@ -133,11 +145,9 @@
     waveform.classList.remove('idle')
     micIcon.classList.add('playing')
 
-    player.src = msg.file_url.startsWith('http') ? msg.file_url : `${SERVER}${msg.file_url}`
-    player.play().catch((err) => {
-  console.error('Play failed:', err)
-  markPlayed(msg.id)
-})
+    const audioUrl = msg.file_url.startsWith('http') ? msg.file_url : `${SERVER}${msg.file_url}`
+    player.src = audioUrl
+    player.play().catch(() => markPlayed(msg.id))
     player.onended = () => markPlayed(msg.id)
   }
 
@@ -148,6 +158,7 @@
     await new Promise(r => setTimeout(r, 400))
     popup.style.display = 'none'
     playing = false
+    queue = queue.filter(m => m.id !== id)
 
     await fetch(`${SERVER}/api/voice/played`, {
       method: 'POST',
@@ -158,7 +169,6 @@
     setTimeout(playNext, 1000)
   }
 
-  // Poll kol 3 secondes
   fetchQueue()
   setInterval(fetchQueue, 3000)
 </script>
