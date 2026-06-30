@@ -1,4 +1,3 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
       .from('millionaire_questions')
       .select('*')
       .eq('game_id', game.id)
-      .eq('level', game.current_level)
+      .eq('level', game.playing_level)
       .single()
 
     if (!question) {
@@ -50,6 +49,11 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('millionaire_games')
         .update({ status: 'finished' })
+        .eq('id', game.id)
+    } else {
+      await supabase
+        .from('millionaire_games')
+        .update({ playing_level: game.playing_level + 1 })
         .eq('id', game.id)
     }
 

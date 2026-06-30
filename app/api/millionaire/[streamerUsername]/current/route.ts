@@ -35,8 +35,8 @@ export async function GET(
     .from('millionaire_questions')
     .select('*')
     .eq('game_id', game.id)
-    .eq('level', game.current_level)
+    .eq('level', game.playing_level)
     .single()
 
   return NextResponse.json({ game, question })
-} 
+}
