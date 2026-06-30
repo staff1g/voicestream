@@ -85,7 +85,12 @@ export default function GamesDashboard() {
     <main className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">Guess the word</h1>
+          <div>
+            <a href="/dashboard" className="text-sm text-gray-500 hover:text-white mb-2 inline-block">
+              Retour au dashboard
+            </a>
+            <h1 className="text-2xl font-bold">Guess the word</h1>
+          </div>
           <span className="text-gray-400">@{username}</span>
         </div>
 
