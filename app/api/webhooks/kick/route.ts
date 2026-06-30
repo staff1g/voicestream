@@ -80,6 +80,8 @@ async function handleChatMessage(body: any) {
   const senderUsername = body.sender?.username
   const content = (body.content || '').trim().toLowerCase()
 
+  console.log('CHAT MSG:', senderUsername, '->', JSON.stringify(content))
+
   if (!content || !senderUsername) return
 
   const { data: streamer } = await supabase
@@ -88,7 +90,10 @@ async function handleChatMessage(body: any) {
     .eq('kick_user_id', broadcasterChannelId)
     .single()
 
-  if (!streamer) return
+  if (!streamer) {
+    console.log('Streamer not found for', broadcasterChannelId)
+    return
+  }
 
   const { data: game } = await supabase
     .from('games')
@@ -97,7 +102,10 @@ async function handleChatMessage(body: any) {
     .eq('status', 'active')
     .single()
 
-  if (!game) return
+  if (!game) {
+    console.log('No active game')
+    return
+  }
 
   const { data: question } = await supabase
     .from('game_questions')
@@ -106,9 +114,16 @@ async function handleChatMessage(body: any) {
     .eq('order_index', game.current_question_index)
     .single()
 
-  if (!question || question.answered_by) return
+  if (!question || question.answered_by) {
+    console.log('No active question or already answered')
+    return
+  }
+
+  console.log('Comparing:', JSON.stringify(content), 'vs', JSON.stringify(question.secret_answer))
 
   if (content === question.secret_answer) {
+    console.log('MATCH! Winner:', senderUsername)
+
     await supabase
       .from('game_questions')
       .update({ answered_by: senderUsername, answered_at: new Date().toISOString() })
