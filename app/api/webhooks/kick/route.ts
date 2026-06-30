@@ -1,31 +1,26 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    console.log('Webhook received:', JSON.stringify(body))
-
-    // Kick sends event type in header
     const eventType = request.headers.get('Kick-Event-Type')
 
-    if (eventType !== 'channel.reward_redemption.created') {
+    console.log('Webhook received:', eventType, JSON.stringify(body))
+
+    if (eventType !== 'channel.reward.redemption.updated') {
       return NextResponse.json({ received: true })
     }
 
-    const redemption = body.redemption || body.data?.redemption
-    if (!redemption) {
+    if (body.status !== 'accepted') {
       return NextResponse.json({ received: true })
     }
 
-    const chatterKickId = String(redemption.user?.id)
-    const chatterUsername = redemption.user?.display_name || redemption.user?.login
-    const broadcasterChannelId = String(redemption.channel_id)
-    const rewardId = redemption.reward?.id
+    const chatterKickId = String(body.redeemer?.user_id)
+    const chatterUsername = body.redeemer?.username
+    const broadcasterChannelId = String(body.broadcaster?.user_id)
+    const rewardId = body.reward?.id
 
-    // Find streamer by kick_user_id
     const { data: streamer } = await supabase
       .from('streamers')
       .select('id, reward_id')
@@ -37,12 +32,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    // Verify this is the right reward
     if (streamer.reward_id && streamer.reward_id !== rewardId) {
+      console.log('Reward ID mismatch, ignoring')
       return NextResponse.json({ received: true })
     }
 
-    // Find or create chatter
     let { data: chatter } = await supabase
       .from('chatters')
       .select('id')
@@ -65,7 +59,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    // Add a pass
     const { data: existing } = await supabase
       .from('chatter_passes')
       .select('passes')

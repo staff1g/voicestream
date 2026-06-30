@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        events: [{ name: 'channel.reward_redemption.created', version: 1 }],
+        events: [{ name: 'channel.reward.redemption.updated', version: 1 }],
         method: 'webhook',
         broadcaster_user_id: Number(streamer.kick_user_id),
       }),
