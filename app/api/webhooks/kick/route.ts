@@ -12,10 +12,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
-    if (body.status !== 'accepted') {
-      return NextResponse.json({ received: true })
-    }
-
     const chatterKickId = String(body.redeemer?.user_id)
     const chatterUsername = body.redeemer?.username
     const broadcasterChannelId = String(body.broadcaster?.user_id)
