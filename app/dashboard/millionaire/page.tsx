@@ -32,6 +32,7 @@ export default function MillionaireDashboard() {
   }, [])
 
   async function launchQuestion() {
+    if (currentLevel > 10) return
     if (!question.trim() || !optionA.trim() || !optionB.trim() || !optionC.trim() || !optionD.trim()) {
       setStatus({ msg: 'Remplis tous les champs', type: 'error' })
       return
@@ -58,7 +59,7 @@ export default function MillionaireDashboard() {
         setOptionC('')
         setOptionD('')
         setCorrectOption('A')
-        setCurrentLevel(l => Math.min(l + 1, 10))
+        setCurrentLevel(l => l + 1)
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }
@@ -91,54 +92,61 @@ export default function MillionaireDashboard() {
           <span className="text-gray-400">@{username}</span>
         </div>
 
-        <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Question niveau {currentLevel} ({AMOUNTS[currentLevel - 1]})
-          </h2>
-
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Texte de la question"
-            className="w-full bg-gray-800 rounded-lg p-3 text-sm outline-none mb-3"
-          />
-
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <input type="radio" name="correct" checked={correctOption === 'A'} onChange={() => setCorrectOption('A')} />
-              <input type="text" value={optionA} onChange={(e) => setOptionA(e.target.value)} placeholder="Option A" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="radio" name="correct" checked={correctOption === 'B'} onChange={() => setCorrectOption('B')} />
-              <input type="text" value={optionB} onChange={(e) => setOptionB(e.target.value)} placeholder="Option B" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="radio" name="correct" checked={correctOption === 'C'} onChange={() => setCorrectOption('C')} />
-              <input type="text" value={optionC} onChange={(e) => setOptionC(e.target.value)} placeholder="Option C" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="radio" name="correct" checked={correctOption === 'D'} onChange={() => setCorrectOption('D')} />
-              <input type="text" value={optionD} onChange={(e) => setOptionD(e.target.value)} placeholder="Option D" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
-            </div>
+        {currentLevel > 10 ? (
+          <div className="bg-gray-900 rounded-xl p-8 mb-6 text-center">
+            <p className="text-xl font-semibold text-green-400 mb-2">Quiz complet</p>
+            <p className="text-gray-400 text-sm">Les 10 questions ont ete envoyees. Reinitialise pour recommencer.</p>
           </div>
+        ) : (
+          <div className="bg-gray-900 rounded-xl p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">
+              Question niveau {currentLevel} ({AMOUNTS[currentLevel - 1]})
+            </h2>
 
-          <p className="text-gray-500 text-xs mb-4">Coche le bouton radio devant la bonne reponse</p>
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Texte de la question"
+              className="w-full bg-gray-800 rounded-lg p-3 text-sm outline-none mb-3"
+            />
 
-          <button
-            onClick={launchQuestion}
-            disabled={submitting}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold disabled:opacity-50"
-          >
-            {submitting ? 'Lancement...' : 'Lancer cette question'}
-          </button>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <input type="radio" name="correct" checked={correctOption === 'A'} onChange={() => setCorrectOption('A')} />
+                <input type="text" value={optionA} onChange={(e) => setOptionA(e.target.value)} placeholder="Option A" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="radio" name="correct" checked={correctOption === 'B'} onChange={() => setCorrectOption('B')} />
+                <input type="text" value={optionB} onChange={(e) => setOptionB(e.target.value)} placeholder="Option B" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="radio" name="correct" checked={correctOption === 'C'} onChange={() => setCorrectOption('C')} />
+                <input type="text" value={optionC} onChange={(e) => setOptionC(e.target.value)} placeholder="Option C" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="radio" name="correct" checked={correctOption === 'D'} onChange={() => setCorrectOption('D')} />
+                <input type="text" value={optionD} onChange={(e) => setOptionD(e.target.value)} placeholder="Option D" className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none" />
+              </div>
+            </div>
 
-          {status && (
-            <p className={`text-sm mt-3 ${status.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-              {status.msg}
-            </p>
-          )}
-        </div>
+            <p className="text-gray-500 text-xs mb-4">Coche le bouton radio devant la bonne reponse</p>
+
+            <button
+              onClick={launchQuestion}
+              disabled={submitting}
+              className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold disabled:opacity-50"
+            >
+              {submitting ? 'Lancement...' : 'Lancer cette question'}
+            </button>
+
+            {status && (
+              <p className={`text-sm mt-3 ${status.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                {status.msg}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>
