@@ -92,6 +92,10 @@ export default function MillionaireDashboard() {
           <span className="text-gray-400">@{username}</span>
         </div>
 
+        <a href="/dashboard/millionaire-play" className="block bg-purple-600 hover:bg-purple-700 rounded-xl p-4 text-center font-semibold mb-6">
+          Jouer / Repondre aux questions
+        </a>
+
         {currentLevel > 10 ? (
           <div className="bg-gray-900 rounded-xl p-8 mb-6 text-center">
             <p className="text-xl font-semibold text-green-400 mb-2">Quiz complet</p>
