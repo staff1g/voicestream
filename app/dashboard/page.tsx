@@ -9,6 +9,10 @@ export default function Dashboard() {
   const [origin, setOrigin] = useState('')
   const [rewardId, setRewardId] = useState('')
   const [webhookStatus, setWebhookStatus] = useState<{ msg: string; type: string } | null>(null)
+  const [chatters, setChatters] = useState<any[]>([])
+  const [newChatterName, setNewChatterName] = useState('')
+  const [newChatterAmount, setNewChatterAmount] = useState('1')
+  const [giveStatus, setGiveStatus] = useState<{ msg: string; type: string } | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -22,14 +26,22 @@ export default function Dashboard() {
       router.push('/')
       return
     }
-    setUsername(decodeURIComponent(name))
-    fetchQueue(decodeURIComponent(name))
+    const decoded = decodeURIComponent(name)
+    setUsername(decoded)
+    fetchQueue(decoded)
+    fetchChatters(decoded)
   }, [])
 
   async function fetchQueue(name: string) {
     const res = await fetch(`/api/queue?username=${name}`)
     const data = await res.json()
     setQueue(data.queue || [])
+  }
+
+  async function fetchChatters(name: string) {
+    const res = await fetch(`/api/streamer/chatters?streamer=${name}`)
+    const data = await res.json()
+    setChatters(data.chatters || [])
   }
 
   async function activateWebhook() {
@@ -52,6 +64,36 @@ export default function Dashboard() {
       }
     } catch {
       setWebhookStatus({ msg: 'Erreur serveur', type: 'error' })
+    }
+  }
+
+  async function givePass() {
+    if (!newChatterName.trim()) {
+      setGiveStatus({ msg: 'Entre un pseudo', type: 'error' })
+      return
+    }
+    setGiveStatus({ msg: 'En cours...', type: 'info' })
+    try {
+      const res = await fetch('/api/streamer/give-pass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          streamerUsername: username,
+          chatterUsername: newChatterName.trim(),
+          amount: newChatterAmount,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setGiveStatus({ msg: `Pass(es) donne(s) a ${newChatterName}`, type: 'success' })
+        setNewChatterName('')
+        setNewChatterAmount('1')
+        fetchChatters(username)
+      } else {
+        setGiveStatus({ msg: data.error || 'Erreur', type: 'error' })
+      }
+    } catch {
+      setGiveStatus({ msg: 'Erreur serveur', type: 'error' })
     }
   }
 
@@ -85,7 +127,7 @@ export default function Dashboard() {
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">Channel Points Reward</h2>
           <p className="text-gray-400 text-sm mb-3">
-            Cree un reward sur Kick (ex: "Voice Pass") et colle son ID ici pour activer les passes automatiques.
+            Cree un reward sur Kick et colle son ID ici pour activer les passes automatiques.
           </p>
           <input
             type="text"
@@ -107,6 +149,69 @@ export default function Dashboard() {
             }`}>
               {webhookStatus.msg}
             </p>
+          )}
+        </div>
+
+        <div className="bg-gray-900 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-2">Donner des passes manuellement</h2>
+          <p className="text-gray-400 text-sm mb-3">
+            Donne des passes a un chatter sans passer par les channel points.
+          </p>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newChatterName}
+              onChange={(e) => setNewChatterName(e.target.value)}
+              placeholder="Pseudo Kick du chatter"
+              className="flex-1 bg-gray-800 rounded-lg p-3 text-sm outline-none"
+            />
+            <input
+              type="number"
+              min="1"
+              value={newChatterAmount}
+              onChange={(e) => setNewChatterAmount(e.target.value)}
+              className="w-20 bg-gray-800 rounded-lg p-3 text-sm outline-none"
+            />
+          </div>
+          <button
+            onClick={givePass}
+            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold"
+          >
+            Donner
+          </button>
+          {giveStatus && (
+            <p className={`text-sm mt-3 ${
+              giveStatus.type === 'success' ? 'text-green-400' :
+              giveStatus.type === 'error' ? 'text-red-400' : 'text-gray-400'
+            }`}>
+              {giveStatus.msg}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-gray-900 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">
+              Chatters ({chatters.length})
+            </h2>
+            <button
+              onClick={() => fetchChatters(username)}
+              className="text-sm text-gray-400 hover:text-white"
+            >
+              Refresh
+            </button>
+          </div>
+          {chatters.length === 0 ? (
+            <p className="text-gray-500 text-sm">Aucun chatter pour le moment</p>
+          ) : (
+            <div className="space-y-2">
+              {chatters.map((c: any) => (
+                <div key={c.id} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                  <span className="font-medium">{c.username}</span>
+                  <span className="text-sm text-green-400">{c.passes} passes</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
