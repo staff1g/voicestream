@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,22 +22,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
-
     const filename = `voice_${Date.now()}.webm`
     const bytes = await audio.arrayBuffer()
-    await writeFile(join(uploadsDir, filename), Buffer.from(bytes))
 
-    await supabase
+    const { error: uploadError } = await supabase.storage
+      .from('voice-messages')
+      .upload(filename, bytes, { contentType: 'audio/webm' })
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      return NextResponse.json({ error: `Upload: ${uploadError.message}` }, { status: 500 })
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('voice-messages')
+      .getPublicUrl(filename)
+
+    const { error: insertError } = await supabase
       .from('voice_queue')
       .insert({
         streamer_id: streamer.id,
         chatter_kick_id: 'web',
         chatter_username: chatterUsername,
-        file_url: `/uploads/${filename}`,
+        file_url: urlData.publicUrl,
         played: false,
       })
+
+    if (insertError) {
+      console.error('Insert error:', insertError)
+      return NextResponse.json({ error: `DB: ${insertError.message}` }, { status: 500 })
+    }
 
     const { count } = await supabase
       .from('voice_queue')
@@ -48,8 +60,8 @@ export async function POST(request: NextRequest) {
       .eq('played', false)
 
     return NextResponse.json({ success: true, position: count || 1 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Voice send error:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: 500 })
   }
 }
