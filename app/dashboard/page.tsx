@@ -35,6 +35,10 @@ export default function Dashboard() {
             <p className="font-medium text-lg">Voice messages</p>
             <p className="text-gray-400 text-sm mt-1">Recois des messages vocaux en direct</p>
           </a>
+          <a href="/dashboard/games" className="bg-gray-900 hover:bg-gray-800 rounded-xl p-5 transition-all">
+            <p className="font-medium text-lg">Guess the word</p>
+            <p className="text-gray-400 text-sm mt-1">Cree un quiz pour ton chat</p>
+          </a>
         </div>
       </div>
     </main>
