@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,34 +24,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
     }
 
-    // Upload to Supabase Storage
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    await mkdir(uploadsDir, { recursive: true })
+
     const filename = `voice_${Date.now()}.webm`
     const bytes = await audio.arrayBuffer()
+    await writeFile(join(uploadsDir, filename), Buffer.from(bytes))
 
-    const { error: uploadError } = await supabase.storage
-      .from('voice-messages')
-      .upload(filename, bytes, {
-        contentType: 'audio/webm',
-      })
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError)
-      return NextResponse.json({ error: 'Erreur upload' }, { status: 500 })
-    }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('voice-messages')
-      .getPublicUrl(filename)
-
-    // Save to DB
     await supabase
       .from('voice_queue')
       .insert({
         streamer_id: streamer.id,
         chatter_kick_id: 'web',
         chatter_username: chatterUsername,
-        file_url: urlData.publicUrl,
+        file_url: `/uploads/${filename}`,
         played: false,
       })
 
