@@ -116,19 +116,19 @@ export default function GamesDashboard() {
             )}
             <p className="text-gray-600 text-sm mt-4">En attente d une bonne reponse dans le chat...</p>
 
-            {lastAnswer && (
-              <div className="mt-4">
-                <button
-                  onClick={() => setShowWord(!showWord)}
-                  className="text-sm text-gray-500 hover:text-purple-400 transition-colors"
-                >
-                  {showWord ? 'Cacher la reponse' : 'Voir la reponse'}
-                </button>
-                {showWord && (
-                  <p className="text-purple-400 font-bold text-lg mt-2">{lastAnswer}</p>
-                )}
-              </div>
-            )}
+            {question && (
+  <div className="mt-4">
+    <button
+      onClick={() => setShowWord(!showWord)}
+      className="text-sm text-gray-500 hover:text-purple-400 transition-colors"
+    >
+      {showWord ? 'Cacher la reponse' : 'Voir la reponse'}
+    </button>
+    {showWord && (
+      <p className="text-purple-400 font-bold text-lg mt-2">{gameState?.question?.secret_answer}</p>
+    )}
+  </div>
+)}
           </div>
         )}
 

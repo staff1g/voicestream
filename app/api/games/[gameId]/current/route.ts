@@ -1,4 +1,3 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -42,6 +41,7 @@ export async function GET(
       hint: question.hint,
       length: question.secret_answer.length,
       answered_by: question.answered_by,
+      secret_answer: question.secret_answer,
     } : null,
     totalQuestions: totalQuestions?.length || 0,
     scores: scores || [],
