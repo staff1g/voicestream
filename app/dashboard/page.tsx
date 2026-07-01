@@ -43,7 +43,7 @@ export default function Dashboard() {
       href: '/dashboard/chatter-stats',
       icon: 'ti-chart-bar',
       title: 'Chatter statistics',
-      desc: 'Voir l activite de tes chatters',
+      desc: 'Voir activite de tes chatters',
       color: 'from-emerald-500/20 to-teal-500/20',
       iconColor: 'text-emerald-400',
       glow: 'group-hover:shadow-emerald-500/20',
@@ -68,13 +68,13 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-              <i className="ti ti-microphone-2 text-white text-lg" />
+              <i className="ti ti-microphone-2 text-white text-lg"></i>
             </div>
             <h1 className="text-xl font-semibold text-white tracking-tight">VoiceStream</h1>
           </div>
           <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
-            <span className="text-sm text-gray-300">@{username}</span>
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50"></div>
+            <span className="text-sm text-gray-300">{username}</span>
           </div>
         </div>
 
@@ -84,15 +84,11 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 gap-4">
           {tools.map((tool) => (
-            
-              key={tool.href}
-              href={tool.href}
-              className={`group relative rounded-2xl p-5 bg-gradient-to-br ${tool.color} backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 shadow-xl ${tool.glow}`}
-            >
-              <div className="absolute inset-0 rounded-2xl bg-gray-950/40" />
+            <a key={tool.href} href={tool.href} className={`group relative rounded-2xl p-5 bg-gradient-to-br ${tool.color} backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 shadow-xl ${tool.glow}`}>
+              <div className="absolute inset-0 rounded-2xl bg-gray-950/40"></div>
               <div className="relative">
                 <div className={`w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 ${tool.iconColor}`}>
-                  <i className={`ti ${tool.icon} text-xl`} />
+                  <i className={`ti ${tool.icon} text-xl`}></i>
                 </div>
                 <p className="font-medium text-white text-base mb-1">{tool.title}</p>
                 <p className="text-gray-400 text-sm">{tool.desc}</p>
