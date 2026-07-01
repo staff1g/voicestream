@@ -63,6 +63,15 @@ export default function Dashboard() {
       iconColor: 'text-amber-400',
       glow: 'group-hover:shadow-amber-500/20',
     },
+    {
+      href: '/dashboard/stream-stats',
+      icon: 'ti-broadcast',
+      title: 'Stream statistics',
+      desc: 'Unique chatters et activite par stream',
+      color: 'from-rose-500/20 to-pink-500/20',
+      iconColor: 'text-rose-400',
+      glow: 'group-hover:shadow-rose-500/20',
+    },
   ]
 
   return (
