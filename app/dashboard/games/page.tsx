@@ -11,6 +11,8 @@ export default function GamesDashboard() {
   const [gameState, setGameState] = useState<any>(null)
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showWord, setShowWord] = useState(false)
+  const [lastAnswer, setLastAnswer] = useState('')
   const router = useRouter()
   const pollRef = useRef<any>(null)
 
@@ -56,9 +58,11 @@ export default function GamesDashboard() {
       const data = await res.json()
       if (res.ok) {
         setGameId(data.gameId)
+        setLastAnswer(answer)
         setAnswer('')
         setHint('')
         setStatus(null)
+        setShowWord(false)
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }
@@ -77,6 +81,8 @@ export default function GamesDashboard() {
     clearInterval(pollRef.current)
     setGameId(null)
     setGameState(null)
+    setLastAnswer('')
+    setShowWord(false)
   }
 
   const question = gameState?.question
@@ -96,14 +102,33 @@ export default function GamesDashboard() {
 
         {question && !question.answered_by && (
           <div className="bg-gray-900 rounded-xl p-8 mb-6 text-center">
-            <p className="text-gray-500 text-sm mb-2">Question en cours</p>
-            <h1 className="text-5xl font-bold tracking-widest mb-4">
-              {'★ '.repeat(question.length).trim()}
-            </h1>
+            <p className="text-gray-500 text-sm mb-4">Question en cours</p>
+            <div className="flex justify-center gap-2 mb-4 flex-wrap">
+              {Array.from({ length: question.length }).map((_: unknown, i: number) => (
+                <div key={i} className="w-12 h-12 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center text-xl font-bold text-purple-400">
+                  ?
+                </div>
+              ))}
+            </div>
+            <p className="text-gray-500 text-sm mb-2">{question.length} lettres</p>
             {question.hint && (
               <p className="text-gray-400">Indice: {question.hint}</p>
             )}
             <p className="text-gray-600 text-sm mt-4">En attente d une bonne reponse dans le chat...</p>
+
+            {lastAnswer && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowWord(!showWord)}
+                  className="text-sm text-gray-500 hover:text-purple-400 transition-colors"
+                >
+                  {showWord ? 'Cacher la reponse' : 'Voir la reponse'}
+                </button>
+                {showWord && (
+                  <p className="text-purple-400 font-bold text-lg mt-2">{lastAnswer}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
