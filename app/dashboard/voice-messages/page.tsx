@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [queue, setQueue] = useState<any[]>([])
   const [origin, setOrigin] = useState('')
   const [rewardId, setRewardId] = useState('')
+  const [rewards, setRewards] = useState<any[]>([])
   const [webhookStatus, setWebhookStatus] = useState<{ msg: string; type: string } | null>(null)
   const [chatters, setChatters] = useState<any[]>([])
   const [newChatterName, setNewChatterName] = useState('')
@@ -30,7 +31,16 @@ export default function Dashboard() {
     setUsername(decoded)
     fetchQueue(decoded)
     fetchChatters(decoded)
+    fetchRewards(decoded)
   }, [])
+
+  async function fetchRewards(name: string) {
+    try {
+      const res = await fetch(`/api/streamer/rewards?username=${name}`)
+      const data = await res.json()
+      setRewards(data.rewards || [])
+    } catch {}
+  }
 
   async function fetchQueue(name: string) {
     const res = await fetch(`/api/queue?username=${name}`)
@@ -128,15 +138,25 @@ export default function Dashboard() {
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">Activer les events (chat, points, live)</h2>
           <p className="text-gray-400 text-sm mb-3">
-            Clique sur Activer pour permettre Guess the word et Millionaire de lire le chat. Le Reward ID est optionnel, seulement necessaire pour les voice passes automatiques.
+            Choisis un reward pour les voice passes automatiques (optionnel), puis clique Activer.
           </p>
-          <input
-            type="text"
-            value={rewardId}
-            onChange={(e) => setRewardId(e.target.value)}
-            placeholder="Reward ID (optionnel)"
-            className="w-full bg-gray-800 rounded-lg p-3 text-sm mb-3 outline-none"
-          />
+          {rewards.length > 0 && (
+            <select
+              value={rewardId}
+              onChange={(e) => setRewardId(e.target.value)}
+              className="w-full bg-gray-800 rounded-lg p-3 text-sm mb-3 outline-none"
+            >
+              <option value="">-- Aucun reward (chat events seulement) --</option>
+              {rewards.map((r: any) => (
+                <option key={r.id} value={r.id}>
+                  {r.title} ({r.cost} points)
+                </option>
+              ))}
+            </select>
+          )}
+          {rewards.length === 0 && (
+            <p className="text-gray-500 text-sm mb-3">Aucun reward trouve sur Kick (optionnel)</p>
+          )}
           <button
             onClick={activateWebhook}
             className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold"
