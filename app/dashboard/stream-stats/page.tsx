@@ -1,12 +1,13 @@
- 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function StreamStats() {
   const [username, setUsername] = useState('')
   const [sessions, setSessions] = useState<any[]>([])
+  const [tracking, setTracking] = useState(false)
+  const pollRef = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -22,9 +23,28 @@ export default function StreamStats() {
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
     fetchStats(decoded)
+    return () => clearInterval(pollRef.current)
   }, [])
 
   async function fetchStats(name: string) {
+    const res = await fetch(`/api/streamer/stream-stats?streamer=${name}`)
+    const data = await res.json()
+    setSessions(data.sessions || [])
+
+    const hasActiveStream = (data.sessions || []).some((s: any) => !s.ended_at)
+    if (hasActiveStream && !pollRef.current) {
+      setTracking(true)
+      takeSnapshot(name)
+      pollRef.current = setInterval(() => takeSnapshot(name), 120000)
+    }
+  }
+
+  async function takeSnapshot(name: string) {
+    await fetch('/api/streamer/viewer-snapshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ streamerUsername: name }),
+    })
     const res = await fetch(`/api/streamer/stream-stats?streamer=${name}`)
     const data = await res.json()
     setSessions(data.sessions || [])
@@ -52,7 +72,15 @@ export default function StreamStats() {
             </a>
             <h1 className="text-2xl font-bold">Stream statistics</h1>
           </div>
-          <span className="text-gray-400">@{username}</span>
+          <div className="flex items-center gap-3">
+            {tracking && (
+              <div className="flex items-center gap-2 bg-green-900/30 border border-green-700 rounded-full px-3 py-1">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-green-400 text-xs">Tracking actif</span>
+              </div>
+            )}
+            <span className="text-gray-400">@{username}</span>
+          </div>
         </div>
 
         {sessions.length === 0 ? (
@@ -62,17 +90,28 @@ export default function StreamStats() {
             {sessions.map((s: any) => (
               <div key={s.id} className="bg-gray-900 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-gray-400">{formatDate(s.started_at)}</p>
+                  <div className="flex items-center gap-2">
+                    {!s.ended_at && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>}
+                    <p className="text-sm text-gray-400">{formatDate(s.started_at)}</p>
+                  </div>
                   <p className="text-sm text-gray-500">{formatDuration(s.started_at, s.ended_at)}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-4 gap-3">
                   <div className="bg-gray-800 rounded-lg p-4">
-                    <p className="text-gray-400 text-sm mb-1">Unique chatters</p>
-                    <p className="text-2xl font-bold text-purple-400">{s.uniqueChatters}</p>
+                    <p className="text-gray-400 text-xs mb-1">Unique chatters</p>
+                    <p className="text-xl font-bold text-purple-400">{s.uniqueChatters}</p>
                   </div>
                   <div className="bg-gray-800 rounded-lg p-4">
-                    <p className="text-gray-400 text-sm mb-1">Messages total</p>
-                    <p className="text-2xl font-bold text-cyan-400">{s.totalMessages}</p>
+                    <p className="text-gray-400 text-xs mb-1">Messages</p>
+                    <p className="text-xl font-bold text-cyan-400">{s.totalMessages}</p>
+                  </div>
+                  <div className="bg-gray-800 rounded-lg p-4">
+                    <p className="text-gray-400 text-xs mb-1">Avg viewers</p>
+                    <p className="text-xl font-bold text-emerald-400">{s.avgViewers}</p>
+                  </div>
+                  <div className="bg-gray-800 rounded-lg p-4">
+                    <p className="text-gray-400 text-xs mb-1">Max viewers</p>
+                    <p className="text-xl font-bold text-rose-400">{s.maxViewers}</p>
                   </div>
                 </div>
               </div>

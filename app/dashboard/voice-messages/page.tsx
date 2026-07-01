@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [newChatterName, setNewChatterName] = useState('')
   const [newChatterAmount, setNewChatterAmount] = useState('1')
   const [giveStatus, setGiveStatus] = useState<{ msg: string; type: string } | null>(null)
+  const [obsCopied, setObsCopied] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -103,7 +104,13 @@ export default function Dashboard() {
     }
   }
 
-  const obsUrl = `${origin}/obs-overlay.html?streamer=${username}&server=${origin}`
+  function copyObsLink() {
+    const obsUrl = `${origin}/obs-overlay.html?streamer=${username}&server=${origin}`
+    navigator.clipboard.writeText(obsUrl)
+    setObsCopied(true)
+    setTimeout(() => setObsCopied(false), 2000)
+  }
+
   const chatterUrl = `${origin}/chatter/${username}`
 
   return (
@@ -130,9 +137,12 @@ export default function Dashboard() {
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>
           <p className="text-gray-400 text-sm mb-3">Copie ce lien dans OBS :</p>
-          <div className="bg-gray-800 rounded-lg p-3 font-mono text-sm text-purple-400 break-all">
-            {obsUrl}
-          </div>
+          <button
+            onClick={copyObsLink}
+            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold"
+          >
+            {obsCopied ? 'Copie !' : 'Copier le lien OBS'}
+          </button>
         </div>
 
         <div className="bg-gray-900 rounded-xl p-6 mb-6">

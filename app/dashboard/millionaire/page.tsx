@@ -16,6 +16,7 @@ export default function MillionaireDashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [currentLevel, setCurrentLevel] = useState(1)
+  const [obsCopied, setObsCopied] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -77,6 +78,13 @@ export default function MillionaireDashboard() {
     })
     setCurrentLevel(1)
     setStatus({ msg: 'Jeu reinitialise', type: 'success' })
+  }
+
+  function copyObsLink() {
+    const url = `${window.location.origin}/millionaire-overlay.html?streamer=${username}&server=${window.location.origin}`
+    navigator.clipboard.writeText(url)
+    setObsCopied(true)
+    setTimeout(() => setObsCopied(false), 2000)
   }
 
   return (
@@ -155,9 +163,12 @@ export default function MillionaireDashboard() {
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>
           <p className="text-gray-400 text-sm mb-3">Copie ce lien dans OBS (fond transparent) :</p>
-          <div className="bg-gray-800 rounded-lg p-3 font-mono text-sm text-purple-400 break-all">
-            {typeof window !== 'undefined' ? `${window.location.origin}/millionaire-overlay.html?streamer=${username}&server=${window.location.origin}` : ''}
-          </div>
+          <button
+            onClick={copyObsLink}
+            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold"
+          >
+            {obsCopied ? 'Copie !' : 'Copier le lien OBS'}
+          </button>
         </div>
 
         <button onClick={resetGame} className="text-sm text-gray-500 hover:text-white">
