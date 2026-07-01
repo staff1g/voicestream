@@ -20,6 +20,12 @@ export default function Dashboard() {
     setUsername(decodeURIComponent(name))
   }, [])
 
+  function logout() {
+    document.cookie = 'kick_username=; path=/; max-age=0'
+    document.cookie = 'chatter_username=; path=/; max-age=0'
+    router.push('/')
+  }
+
   const tools = [
     {
       href: '/dashboard/voice-messages',
@@ -72,9 +78,14 @@ export default function Dashboard() {
             </div>
             <h1 className="text-xl font-semibold text-white tracking-tight">VoiceStream</h1>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50"></div>
-            <span className="text-sm text-gray-300">{username}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50"></div>
+              <span className="text-sm text-gray-300">{username}</span>
+            </div>
+            <button onClick={logout} className="flex items-center gap-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-3 py-2 text-sm text-gray-400 hover:text-red-400 hover:border-red-400/30 transition-colors">
+              <i className="ti ti-logout text-base"></i>
+            </button>
           </div>
         </div>
 
