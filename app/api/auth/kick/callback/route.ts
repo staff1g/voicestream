@@ -63,10 +63,11 @@ export async function GET(request: NextRequest) {
         },
         body: JSON.stringify({
           events: [
-            { name: 'channel.reward.redemption.updated', version: 1 },
-            { name: 'chat.message.sent', version: 1 },
-            { name: 'livestream.status.updated', version: 1 },
-          ],
+  { name: 'channel.reward.redemption.updated', version: 1 },
+  { name: 'chat.message.sent', version: 1 },
+  { name: 'livestream.status.updated', version: 1 },
+  { name: 'channel.subscription.new', version: 1 },
+],
           method: 'webhook',
           broadcaster_user_id: Number(user.user_id),
         }),

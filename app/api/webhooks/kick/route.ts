@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
+    if (eventType === 'channel.subscription.new') {
+      await handleNewSubscription(body)
+      return NextResponse.json({ received: true })
+    }
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook error:', error)
@@ -209,4 +214,58 @@ async function handleStreamStatus(body: any) {
       .eq('streamer_id', streamer.id)
       .is('ended_at', null)
   }
+}
+
+async function handleNewSubscription(body: any) {
+  const broadcasterChannelId = String(body.broadcaster?.user_id)
+  const subscriberUsername = body.subscriber?.username
+  const subscriberKickId = String(body.subscriber?.user_id)
+
+  if (!subscriberUsername || !subscriberKickId) return
+
+  const { data: streamer } = await supabase
+    .from('streamers')
+    .select('id')
+    .eq('kick_user_id', broadcasterChannelId)
+    .single()
+
+  if (!streamer) return
+
+  let { data: chatter } = await supabase
+    .from('chatters')
+    .select('id')
+    .eq('kick_user_id', subscriberKickId)
+    .single()
+
+  if (!chatter) {
+    const { data: newChatter } = await supabase
+      .from('chatters')
+      .insert({ kick_user_id: subscriberKickId, username: subscriberUsername })
+      .select()
+      .single()
+    chatter = newChatter
+  }
+
+  if (!chatter) return
+
+  const { data: existing } = await supabase
+    .from('chatter_passes')
+    .select('passes')
+    .eq('chatter_id', chatter.id)
+    .eq('streamer_id', streamer.id)
+    .single()
+
+  if (existing) {
+    await supabase
+      .from('chatter_passes')
+      .update({ passes: existing.passes + 5, updated_at: new Date().toISOString() })
+      .eq('chatter_id', chatter.id)
+      .eq('streamer_id', streamer.id)
+  } else {
+    await supabase
+      .from('chatter_passes')
+      .insert({ chatter_id: chatter.id, streamer_id: streamer.id, passes: 5 })
+  }
+
+  console.log(`5 passes added for subscriber ${subscriberUsername}`)
 }
