@@ -38,5 +38,11 @@ export async function GET(
     .eq('level', game.playing_level)
     .single()
 
-  return NextResponse.json({ game, question })
+  let timerRemaining = null
+  if (game.timer_started_at) {
+    const elapsed = Math.floor((Date.now() - new Date(game.timer_started_at + 'Z').getTime()) / 1000)
+    timerRemaining = Math.max(0, 30 - elapsed)
+  }
+
+  return NextResponse.json({ game: { ...game, timer_remaining: timerRemaining }, question })
 }

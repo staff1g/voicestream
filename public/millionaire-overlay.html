@@ -90,8 +90,8 @@
     color: #e8d28a;
   }
   .timer.active { display: flex; }
-  .timer.warning { border-color: #e85d3a; color: #e85d3a; }
-  .timer.critical { border-color: #ff2222; color: #ff2222; animation: pulse 0.5s infinite; }
+  .timer.warning { display: flex; border-color: #e85d3a; color: #e85d3a; }
+  .timer.critical { display: flex; border-color: #ff2222; color: #ff2222; animation: pulse 0.5s infinite; }
   @keyframes pulse {
     0%, 100% { transform: translateX(-50%) scale(1); }
     50% { transform: translateX(-50%) scale(1.1); }
@@ -211,14 +211,12 @@
   }
 
   function renderTimer(game) {
-    if (game.timer_started_at) {
-      const elapsed = Math.floor((Date.now() - new Date(game.timer_started_at).getTime()) / 1000)
-      const remaining = Math.max(0, 30 - elapsed)
-      timerEl.textContent = remaining
+    if (game.timer_remaining !== null && game.timer_remaining !== undefined) {
+      timerEl.textContent = game.timer_remaining
       timerEl.className = 'timer active'
-      if (remaining <= 5) {
+      if (game.timer_remaining <= 5) {
         timerEl.className = 'timer active critical'
-      } else if (remaining <= 10) {
+      } else if (game.timer_remaining <= 10) {
         timerEl.className = 'timer active warning'
       }
     } else {
@@ -247,5 +245,4 @@
   setInterval(fetchState, 1000)
 </script>
 </body>
-<!-- v2 timer fix -->
 </html>
