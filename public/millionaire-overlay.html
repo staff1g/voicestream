@@ -3,12 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <style>
-
- 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { 
     background: url("Bureau_Man_sayarba7_1.jpg") center center / cover no-repeat;
-   background-size: cover;
+    background-size: cover;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     width: 100%;
     height: 100%;
@@ -22,7 +20,6 @@
     top: 1%;
     right: 1%;
     width: 13%;
-  /*  min-width: 120px; */
   }
   .ladder-row {
     height: 4vh;
@@ -75,6 +72,30 @@
   }
   .lifeline.used { opacity: 0.25; }
 
+  .timer {
+    position: absolute;
+    bottom: 22%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(10, 10, 15, 0.85);
+    border: 3px solid #e8d28a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #e8d28a;
+  }
+  .timer.warning { border-color: #e85d3a; color: #e85d3a; }
+  .timer.critical { border-color: #ff2222; color: #ff2222; animation: pulse 0.5s infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.1); }
+  }
+
   .qbox {
     margin-bottom: 30px;
     position: absolute;
@@ -102,7 +123,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1%;
-  
   }
   .option {
     background: #1a3a6b;
@@ -120,7 +140,6 @@
 </head>
 <body>
 
-
 <div id="content">
   <div class="lifelines">
     <div class="lifeline" id="ll-5050">50/50</div>
@@ -130,6 +149,7 @@
 
   <div class="ladder" id="ladder"></div>
 
+  <div class="timer" id="timer">30</div>
   <div class="qbox" id="qbox"></div>
   <div class="options" id="options"></div>
 </div>
@@ -144,6 +164,33 @@
   const ladderEl = document.getElementById('ladder')
   const qboxEl = document.getElementById('qbox')
   const optionsEl = document.getElementById('options')
+  const timerEl = document.getElementById('timer')
+
+  let currentLevel = null
+  let timerInterval = null
+  let timerValue = 30
+
+  function startTimer() {
+    clearInterval(timerInterval)
+    timerValue = 30
+    timerEl.textContent = timerValue
+    timerEl.className = 'timer'
+    timerInterval = setInterval(() => {
+      timerValue--
+      if (timerValue <= 0) {
+        timerValue = 0
+        clearInterval(timerInterval)
+      }
+      timerEl.textContent = timerValue
+      if (timerValue <= 5) {
+        timerEl.className = 'timer critical'
+      } else if (timerValue <= 10) {
+        timerEl.className = 'timer warning'
+      } else {
+        timerEl.className = 'timer'
+      }
+    }, 1000)
+  }
 
   function renderLadder(playingLevel) {
     ladderEl.innerHTML = ''
@@ -195,11 +242,19 @@
       const data = await res.json()
       if (data.game && data.question) {
         content.style.display = 'block'
+
+        if (data.game.playing_level !== currentLevel) {
+          currentLevel = data.game.playing_level
+          startTimer()
+        }
+
         renderLadder(data.game.playing_level)
         renderQuestion(data.question, data.game.eliminated_options, data.game.last_chosen_option, data.game.last_answer_status)
         renderLifelines(data.game)
       } else {
         content.style.display = 'none'
+        currentLevel = null
+        clearInterval(timerInterval)
       }
     } catch {}
   }
