@@ -3,7 +3,33 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { streamerUsername, answer, hint } = await request.json()
+    const contentType = request.headers.get('content-type') || ''
+
+    let streamerUsername: string
+    let answer: string
+    let hint: string
+    let imageUrl: string | null = null
+
+    if (contentType.includes('multipart/form-data')) {
+      const form = await request.formData()
+      streamerUsername = form.get('streamerUsername') as string
+      answer = form.get('answer') as string
+      hint = (form.get('hint') as string) || ''
+      const image = form.get('image') as File | null
+
+      if (image && image.size > 0) {
+        const filename = `game_${Date.now()}.${image.name.split('.').pop()}`
+        const bytes = await image.arrayBuffer()
+        await supabase.storage.from('game-images').upload(filename, bytes, { contentType: image.type })
+        const { data: urlData } = supabase.storage.from('game-images').getPublicUrl(filename)
+        imageUrl = urlData.publicUrl
+      }
+    } else {
+      const body = await request.json()
+      streamerUsername = body.streamerUsername
+      answer = body.answer
+      hint = body.hint || ''
+    }
 
     if (!streamerUsername || !answer) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
@@ -56,6 +82,7 @@ export async function POST(request: NextRequest) {
         secret_answer: answer.trim().toLowerCase(),
         hint: hint || '',
         order_index: nextOrderIndex,
+        image_url: imageUrl,
       })
 
     await supabase

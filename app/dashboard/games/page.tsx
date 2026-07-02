@@ -7,12 +7,14 @@ export default function GamesDashboard() {
   const [username, setUsername] = useState('')
   const [answer, setAnswer] = useState('')
   const [hint, setHint] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState('')
   const [gameId, setGameId] = useState<string | null>(null)
   const [gameState, setGameState] = useState<any>(null)
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showWord, setShowWord] = useState(false)
-  const [lastAnswer, setLastAnswer] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const pollRef = useRef<any>(null)
 
@@ -43,6 +45,13 @@ export default function GamesDashboard() {
     setGameState(data)
   }
 
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   async function launchQuestion() {
     if (!answer.trim()) {
       setStatus({ msg: 'Entre une reponse', type: 'error' })
@@ -50,19 +59,28 @@ export default function GamesDashboard() {
     }
     setSubmitting(true)
     try {
+      const form = new FormData()
+      form.append('streamerUsername', username)
+      form.append('answer', answer)
+      form.append('hint', hint)
+      if (imageFile) {
+        form.append('image', imageFile)
+      }
+
       const res = await fetch('/api/games/add-question', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ streamerUsername: username, answer, hint }),
+        body: form,
       })
       const data = await res.json()
       if (res.ok) {
         setGameId(data.gameId)
-        setLastAnswer(answer)
         setAnswer('')
         setHint('')
+        setImageFile(null)
+        setImagePreview('')
         setStatus(null)
         setShowWord(false)
+        if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }
@@ -81,7 +99,6 @@ export default function GamesDashboard() {
     clearInterval(pollRef.current)
     setGameId(null)
     setGameState(null)
-    setLastAnswer('')
     setShowWord(false)
   }
 
@@ -103,6 +120,9 @@ export default function GamesDashboard() {
         {question && !question.answered_by && (
           <div className="bg-gray-900 rounded-xl p-8 mb-6 text-center">
             <p className="text-gray-500 text-sm mb-4">Question en cours</p>
+            {question.image_url && (
+              <img src={question.image_url} alt="Indice visuel" className="max-h-64 mx-auto mb-4 rounded-lg" />
+            )}
             <div className="flex justify-center gap-2 mb-4 flex-wrap">
               {Array.from({ length: question.length }).map((_: unknown, i: number) => (
                 <div key={i} className="w-12 h-12 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center text-xl font-bold text-purple-400">
@@ -117,18 +137,18 @@ export default function GamesDashboard() {
             <p className="text-gray-600 text-sm mt-4">En attente d une bonne reponse dans le chat...</p>
 
             {question && (
-  <div className="mt-4">
-    <button
-      onClick={() => setShowWord(!showWord)}
-      className="text-sm text-gray-500 hover:text-purple-400 transition-colors"
-    >
-      {showWord ? 'Cacher la reponse' : 'Voir la reponse'}
-    </button>
-    {showWord && (
-      <p className="text-purple-400 font-bold text-lg mt-2">{gameState?.question?.secret_answer}</p>
-    )}
-  </div>
-)}
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowWord(!showWord)}
+                  className="text-sm text-gray-500 hover:text-purple-400 transition-colors"
+                >
+                  {showWord ? 'Cacher la reponse' : 'Voir la reponse'}
+                </button>
+                {showWord && (
+                  <p className="text-purple-400 font-bold text-lg mt-2">{gameState?.question?.secret_answer}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -156,6 +176,22 @@ export default function GamesDashboard() {
             placeholder="Indice (optionnel)"
             className="w-full bg-gray-800 rounded-lg p-3 text-sm outline-none mb-3"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium mb-3"
+          >
+            {imageFile ? imageFile.name : 'Ajouter une image (optionnel)'}
+          </button>
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" className="max-h-32 mx-auto mb-3 rounded-lg" />
+          )}
           <button
             onClick={launchQuestion}
             disabled={submitting}

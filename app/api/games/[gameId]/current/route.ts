@@ -42,6 +42,7 @@ export async function GET(
       length: question.secret_answer.length,
       answered_by: question.answered_by,
       secret_answer: question.secret_answer,
+      image_url: question.image_url,
     } : null,
     totalQuestions: totalQuestions?.length || 0,
     scores: scores || [],
