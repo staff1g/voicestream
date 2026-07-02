@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getValidToken } from '@/lib/kickAuth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const { data: streamer } = await supabase
       .from('streamers')
-      .select('id, kick_user_id, access_token')
+      .select('id, kick_user_id')
       .ilike('username', username)
       .single()
 
@@ -26,10 +27,15 @@ export async function POST(request: NextRequest) {
         .eq('id', streamer.id)
     }
 
+    const token = await getValidToken(username)
+    if (!token) {
+      return NextResponse.json({ error: 'Token expire, reconnecte-toi via Kick' }, { status: 401 })
+    }
+
     const subRes = await fetch('https://api.kick.com/public/v1/events/subscriptions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${streamer.access_token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
