@@ -34,9 +34,6 @@ export default function MillionaireDashboard() {
 
   async function fetchQuizzes(name: string) {
     try {
-      const res = await fetch(`/api/millionaire/${name}/current`)
-      const data = await res.json()
-
       const res2 = await fetch(`/api/millionaire/list?streamer=${name}`)
       const data2 = await res2.json()
       setQuizzes(data2.quizzes || [])
@@ -90,6 +87,16 @@ export default function MillionaireDashboard() {
     fetchQuizzes(username)
   }
 
+  async function deleteQuiz(gameId: string) {
+    if (!confirm('Supprimer ce quiz ?')) return
+    await fetch('/api/millionaire/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId }),
+    })
+    fetchQuizzes(username)
+  }
+
   function copyObsLink() {
     const url = `${window.location.origin}/millionaire-overlay.html?streamer=${username}&server=${window.location.origin}`
     navigator.clipboard.writeText(url)
@@ -136,23 +143,39 @@ export default function MillionaireDashboard() {
                     <p className="text-gray-500 text-xs">{q.status}</p>
                   </div>
                   {q.status === 'ready' && (
-                    <button
-                      onClick={() => activateQuiz(q.id)}
-                      className="bg-green-600 hover:bg-green-700 rounded-lg px-3 py-1 text-sm font-semibold"
-                    >
-                      Activer
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => activateQuiz(q.id)}
+                        className="bg-green-600 hover:bg-green-700 rounded-lg px-3 py-1 text-sm font-semibold"
+                      >
+                        Activer
+                      </button>
+                      <button
+                        onClick={() => deleteQuiz(q.id)}
+                        className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg px-3 py-1 text-sm transition-colors"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                   {q.status === 'active' && (
                     <span className="text-green-400 text-sm font-medium">En cours</span>
                   )}
                   {q.status === 'finished' && (
-                    <button
-                      onClick={() => activateQuiz(q.id)}
-                      className="bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1 text-sm"
-                    >
-                      Rejouer
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => activateQuiz(q.id)}
+                        className="bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1 text-sm"
+                      >
+                        Rejouer
+                      </button>
+                      <button
+                        onClick={() => deleteQuiz(q.id)}
+                        className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg px-3 py-1 text-sm transition-colors"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
