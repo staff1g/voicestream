@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
           .from('millionaire_games')
           .update({
             playing_level: game.playing_level + 1,
-            eliminated_options: [],
+eliminated_options: [],
+timer_started_at: null,
             last_chosen_option: null,
             last_answer_status: null,
           })

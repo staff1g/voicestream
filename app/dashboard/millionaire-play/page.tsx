@@ -92,6 +92,15 @@ export default function MillionairePlay() {
     } catch {}
   }
 
+  async function startTimer() {
+    await fetch('/api/millionaire/start-timer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ streamerUsername: username }),
+    })
+    fetchState(username)
+  }
+
   const question = gameState?.question
   const game = gameState?.game
   const eliminated = game?.eliminated_options || []
@@ -139,6 +148,12 @@ export default function MillionairePlay() {
               >
                 Ami
               </button>
+              <button
+                onClick={startTimer}
+                className="bg-amber-600 hover:bg-amber-700 rounded-full w-16 h-16 flex items-center justify-center text-xs font-semibold"
+              >
+                30s
+              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -162,7 +177,7 @@ export default function MillionairePlay() {
             {result && (
               <div className={`rounded-xl p-4 ${result.correct ? 'bg-green-900/40 text-green-300' : 'bg-red-900/40 text-red-300'}`}>
                 {result.correct
-                  ? `Bonne reponse ! C'etait ${result.correctOption}`
+                  ? `Bonne reponse ! C etait ${result.correctOption}`
                   : `Mauvaise reponse. La bonne reponse etait ${result.correctOption}`}
               </div>
             )}
