@@ -111,8 +111,6 @@ export default function Dashboard() {
     setTimeout(() => setObsCopied(false), 2000)
   }
 
-  const chatterUrl = `${origin}/chatter/${username}`
-
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-3xl mx-auto">
@@ -126,13 +124,6 @@ export default function Dashboard() {
           <span className="text-gray-400">@{username}</span>
         </div>
 
-        <div className="bg-gray-900 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Page chatters</h2>
-          <p className="text-gray-400 text-sm mb-3">Partage ce lien dans ton chat Kick :</p>
-          <div className="bg-gray-800 rounded-lg p-3 font-mono text-sm text-green-400 break-all">
-            {chatterUrl}
-          </div>
-        </div>
 
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>

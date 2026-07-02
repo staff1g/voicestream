@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=no_user`)
     }
 
-    // Save to Supabase
     const { error: upsertError } = await supabase.from('streamers').upsert({
       kick_user_id: String(user.user_id),
       username: user.name,
@@ -54,6 +53,28 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Streamer saved:', user.name)
+
+    try {
+      await fetch('https://api.kick.com/public/v1/events/subscriptions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokens.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          events: [
+            { name: 'channel.reward.redemption.updated', version: 1 },
+            { name: 'chat.message.sent', version: 1 },
+            { name: 'livestream.status.updated', version: 1 },
+          ],
+          method: 'webhook',
+          broadcaster_user_id: Number(user.user_id),
+        }),
+      })
+      console.log('Auto-subscribed events for:', user.name)
+    } catch (subError) {
+      console.error('Auto-subscribe error:', subError)
+    }
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard`)
     response.cookies.set('kick_user_id', String(user.user_id), { httpOnly: true })
