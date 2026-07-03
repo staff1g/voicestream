@@ -14,6 +14,12 @@ export default function GamesDashboard() {
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showWord, setShowWord] = useState(false)
+  const [drawing, setDrawing] = useState(false)
+  const [brushColor, setBrushColor] = useState('#ffffff')
+  const [brushSize, setBrushSize] = useState(4)
+  const [isEraser, setIsEraser] = useState(false)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isDrawingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const pollRef = useRef<any>(null)
@@ -38,6 +44,17 @@ export default function GamesDashboard() {
     return () => clearInterval(pollRef.current)
   }, [gameId])
 
+  useEffect(() => {
+    if (drawing && canvasRef.current) {
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.fillStyle = '#1a1a2e'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      }
+    }
+  }, [drawing])
+
   async function fetchGameState() {
     if (!gameId) return
     const res = await fetch(`/api/games/${gameId}/current`)
@@ -50,6 +67,45 @@ export default function GamesDashboard() {
     if (!file) return
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
+  }
+
+  function getCanvasPos(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const rect = canvas.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+
+  function startDraw(e: React.MouseEvent<HTMLCanvasElement>) {
+    isDrawingRef.current = true
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const pos = getCanvasPos(e)
+    ctx.beginPath()
+    ctx.moveTo(pos.x, pos.y)
+  }
+
+  function draw(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!isDrawingRef.current) return
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const pos = getCanvasPos(e)
+    ctx.lineWidth = brushSize
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = isEraser ? '#1a1a2e' : brushColor
+    ctx.lineTo(pos.x, pos.y)
+    ctx.stroke()
+  }
+
+  function stopDraw() {
+    isDrawingRef.current = false
+  }
+
+  function clearCanvas() {
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx || !canvasRef.current) return
+    ctx.fillStyle = '#1a1a2e'
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
   }
 
   async function launchQuestion() {
@@ -80,6 +136,7 @@ export default function GamesDashboard() {
         setImagePreview('')
         setStatus(null)
         setShowWord(false)
+        setDrawing(true)
         if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
@@ -100,9 +157,11 @@ export default function GamesDashboard() {
     setGameId(null)
     setGameState(null)
     setShowWord(false)
+    setDrawing(false)
   }
 
   const question = gameState?.question
+  const COLORS = ['#ffffff', '#ff4444', '#44ff44', '#4488ff', '#ffff44', '#ff44ff', '#44ffff', '#ff8844']
 
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
@@ -123,6 +182,66 @@ export default function GamesDashboard() {
             {question.image_url && (
               <img src={question.image_url} alt="Indice visuel" className="max-h-64 mx-auto mb-4 rounded-lg" />
             )}
+
+            {drawing && (
+              <div className="mb-4">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={400}
+                  onMouseDown={startDraw}
+                  onMouseMove={draw}
+                  onMouseUp={stopDraw}
+                  onMouseLeave={stopDraw}
+                  className="border border-gray-700 rounded-lg cursor-crosshair mx-auto block"
+                  style={{ background: '#1a1a2e' }}
+                />
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => { setBrushColor(c); setIsEraser(false) }}
+                      className="w-7 h-7 rounded-full border-2"
+                      style={{ background: c, borderColor: brushColor === c && !isEraser ? '#fff' : 'transparent' }}
+                    />
+                  ))}
+                  <button
+                    onClick={() => setIsEraser(!isEraser)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium ${isEraser ? 'bg-yellow-500 text-black' : 'bg-gray-700'}`}
+                  >
+                    Gomme
+                  </button>
+                  <button
+                    onClick={clearCanvas}
+                    className="px-3 py-1 bg-red-600 rounded-lg text-xs font-medium"
+                  >
+                    Effacer
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">Taille:</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className="w-32"
+                  />
+                  <span className="text-xs text-gray-400">{brushSize}px</span>
+                </div>
+              </div>
+            )}
+
+            {!drawing && (
+              <button
+                onClick={() => setDrawing(true)}
+                className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold mb-4"
+              >
+                Ouvrir le dessin
+              </button>
+            )}
+
             <div className="flex justify-center gap-2 mb-4 flex-wrap">
               {Array.from({ length: question.length }).map((_: unknown, i: number) => (
                 <div key={i} className="w-12 h-12 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center text-xl font-bold text-purple-400">
