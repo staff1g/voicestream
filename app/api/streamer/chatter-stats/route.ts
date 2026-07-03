@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       .select('session_id, created_at')
       .eq('streamer_id', streamer.id)
       .ilike('chatter_username', chatterUsername)
+      .limit(50000)
 
     const totalMessages = activity?.length || 0
     const distinctSessions = new Set((activity || []).map(a => a.session_id))
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
     .from('chat_activity')
     .select('chatter_username, session_id')
     .eq('streamer_id', streamer.id)
+    .limit(50000)
 
   const statsMap: Record<string, { messages: number; sessions: Set<string> }> = {}
 
@@ -64,4 +66,4 @@ export async function GET(request: NextRequest) {
   })).sort((a, b) => b.totalMessages - a.totalMessages)
 
   return NextResponse.json({ chatters })
-} 
+}
