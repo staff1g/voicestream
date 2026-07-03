@@ -20,50 +20,36 @@ export async function GET(request: NextRequest) {
   }
 
   if (chatterUsername) {
-    const { data: activity } = await supabase
+    const { data } = await supabase.rpc('get_chatter_stats', { p_streamer_id: streamer.id })
+    const chatterData = (data || []).find((c: any) => c.chatter_username.toLowerCase() === chatterUsername.toLowerCase())
+
+    if (!chatterData) {
+      return NextResponse.json({ chatter: chatterUsername, totalMessages: 0, presenceCount: 0, lastSeen: null })
+    }
+
+    const { data: lastMsg } = await supabase
       .from('chat_activity')
-      .select('session_id, created_at')
+      .select('created_at')
       .eq('streamer_id', streamer.id)
       .ilike('chatter_username', chatterUsername)
-      .limit(50000)
-
-    const totalMessages = activity?.length || 0
-    const distinctSessions = new Set((activity || []).map(a => a.session_id))
-    const presenceCount = distinctSessions.size
-
-    const lastMessage = activity && activity.length > 0
-      ? activity.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b)
-      : null
+      .order('created_at', { ascending: false })
+      .limit(1)
 
     return NextResponse.json({
       chatter: chatterUsername,
-      totalMessages,
-      presenceCount,
-      lastSeen: lastMessage?.created_at || null,
+      totalMessages: Number(chatterData.total_messages),
+      presenceCount: Number(chatterData.presence_count),
+      lastSeen: lastMsg?.[0]?.created_at || null,
     })
   }
 
-  const { data: allActivity } = await supabase
-    .from('chat_activity')
-    .select('chatter_username, session_id')
-    .eq('streamer_id', streamer.id)
-    .limit(50000)
+  const { data } = await supabase.rpc('get_chatter_stats', { p_streamer_id: streamer.id })
 
-  const statsMap: Record<string, { messages: number; sessions: Set<string> }> = {}
-
-  for (const a of allActivity || []) {
-    if (!statsMap[a.chatter_username]) {
-      statsMap[a.chatter_username] = { messages: 0, sessions: new Set() }
-    }
-    statsMap[a.chatter_username].messages++
-    statsMap[a.chatter_username].sessions.add(a.session_id)
-  }
-
-  const chatters = Object.entries(statsMap).map(([username, data]) => ({
-    username,
-    totalMessages: data.messages,
-    presenceCount: data.sessions.size,
-  })).sort((a, b) => b.totalMessages - a.totalMessages)
+  const chatters = (data || []).map((c: any) => ({
+    username: c.chatter_username,
+    totalMessages: Number(c.total_messages),
+    presenceCount: Number(c.presence_count),
+  }))
 
   return NextResponse.json({ chatters })
 }
