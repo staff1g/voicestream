@@ -28,16 +28,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ sessions: [] })
   }
 
+  const { data: statsData } = await supabase.rpc('get_stream_stats', { p_streamer_id: streamer.id })
+
+  const statsMap: Record<string, { unique_chatters: number; total_messages: number }> = {}
+  for (const s of statsData || []) {
+    statsMap[s.session_id] = {
+      unique_chatters: Number(s.unique_chatters),
+      total_messages: Number(s.total_messages),
+    }
+  }
+
   const results = []
 
   for (const session of sessions) {
-    const { data: activity } = await supabase
-      .from('chat_activity')
-      .select('chatter_username')
-      .eq('session_id', session.id)
-
-    const uniqueChatters = new Set((activity || []).map(a => a.chatter_username))
-    const totalMessages = activity?.length || 0
+    const stats = statsMap[session.id] || { unique_chatters: 0, total_messages: 0 }
 
     const { data: snapshots } = await supabase
       .from('viewer_snapshots')
@@ -45,13 +49,11 @@ export async function GET(request: NextRequest) {
       .eq('session_id', session.id)
 
     let avgViewers = 0
-    let minViewers = 0
     let maxViewers = 0
 
     if (snapshots && snapshots.length > 0) {
       const counts = snapshots.map(s => s.viewer_count)
       avgViewers = Math.round(counts.reduce((a, b) => a + b, 0) / counts.length)
-      minViewers = Math.min(...counts)
       maxViewers = Math.max(...counts)
     }
 
@@ -59,10 +61,9 @@ export async function GET(request: NextRequest) {
       id: session.id,
       started_at: session.started_at,
       ended_at: session.ended_at,
-      uniqueChatters: uniqueChatters.size,
-      totalMessages,
+      uniqueChatters: stats.unique_chatters,
+      totalMessages: stats.total_messages,
       avgViewers,
-      minViewers,
       maxViewers,
       snapshotCount: snapshots?.length || 0,
     })
