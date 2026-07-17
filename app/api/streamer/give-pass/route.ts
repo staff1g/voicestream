@@ -22,22 +22,19 @@ export async function POST(request: NextRequest) {
     }
 
     let { data: chatter } = await supabase
-      .from('chatters')
-      .select('id')
-      .ilike('username', chatterUsername)
-      .single()
+  .from('chatters')
+  .select('id')
+  .ilike('username', chatterUsername)
+  .maybeSingle()
 
-    if (!chatter) {
-      const { data: newChatter } = await supabase
-        .from('chatters')
-        .insert({
-          kick_user_id: `manual_${Date.now()}`,
-          username: chatterUsername,
-        })
-        .select()
-        .single()
-      chatter = newChatter
-    }
+if (!chatter) {
+  const { data: newChatter } = await supabase
+    .from('chatters')
+    .upsert({ kick_user_id: `manual_${Date.now()}`, username: chatterUsername }, { onConflict: 'username' })
+    .select()
+    .single()
+  chatter = newChatter
+}
 
     if (!chatter) {
       return NextResponse.json({ error: 'Erreur creation chatter' }, { status: 500 })
