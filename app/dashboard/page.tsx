@@ -37,6 +37,15 @@ export default function Dashboard() {
       glow: 'group-hover:shadow-purple-500/20',
     },
     {
+      href: '/dashboard/dating',
+      icon: 'ti-heart',
+      title: 'Dating',
+      desc: 'Voir les matches de tes viewers',
+      color: 'from-pink-500/20 to-rose-500/20',
+      iconColor: 'text-pink-400',
+      glow: 'group-hover:shadow-pink-500/20',
+    },
+    {
       href: '/dashboard/games',
       icon: 'ti-message-question',
       title: 'Guess the word',
