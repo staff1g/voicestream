@@ -67,10 +67,17 @@ export default function Streamers() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {filtered.map((s: any) => (
-              <a key={s.id} href={`/chatter/${s.username}`} className="bg-gray-900 hover:bg-gray-800 rounded-xl p-5 transition-all">
-                <p className="font-medium text-lg">{s.username}</p>
-                <p className="text-gray-400 text-sm mt-1">Envoyer un message vocal</p>
-              </a>
+              <div key={s.id} className="bg-gray-900 rounded-xl p-5">
+  <p className="font-medium text-lg mb-3">{s.username}</p>
+  <div className="flex gap-2">
+    <a href={`/chatter/${s.username}`} className="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg p-2 text-center text-sm transition-all">
+      Voice msg
+    </a>
+    <a href={`/dating/${s.username}`} className="flex-1 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 rounded-lg p-2 text-center text-sm transition-all">
+      Dating
+    </a>
+  </div>
+</div>
             ))}
           </div>
         )}
