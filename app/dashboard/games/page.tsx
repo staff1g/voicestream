@@ -271,11 +271,24 @@ export default function GamesDashboard() {
           </div>
         )}
 
-        {question && question.answered_by && (
-          <div className="bg-green-900/30 border border-green-700 rounded-xl p-6 mb-6 text-center">
-            <p className="text-green-400 font-semibold text-lg">{question.answered_by} a trouve la reponse !</p>
-          </div>
-        )}
+       {question && question.answered_by && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div className="bg-gray-900 border border-green-500 rounded-2xl p-10 text-center max-w-md mx-4 animate-bounce-once">
+      <div className="text-5xl mb-4">🎉</div>
+      <p className="text-green-400 font-bold text-2xl mb-2">Bonne reponse !</p>
+      <p className="text-white text-3xl font-bold mb-4">{gameState?.question?.secret_answer}</p>
+      <p className="text-gray-400 text-lg mb-6">
+        Trouve par <span className="text-purple-400 font-semibold">{question.answered_by}</span>
+      </p>
+      <button
+        onClick={() => fetchGameState()}
+        className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 py-3 font-semibold"
+      >
+        Question suivante
+      </button>
+    </div>
+  </div>
+)}
 
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">
