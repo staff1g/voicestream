@@ -47,32 +47,52 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
 
   if (existing) {
-  const { error: updateError } = await supabase
+  const { data: existing } = await supabase
+  .from('chatters')
+  .select('id')
+  .eq('kick_user_id', String(user.user_id))
+  .maybeSingle()
+
+if (existing) {
+  await supabase
     .from('chatters')
     .update({
-      kick_user_id: String(user.user_id),
+      username: user.name,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
     })
     .eq('id', existing.id)
-
-  if (updateError) {
-    console.error('Update error:', JSON.stringify(updateError))
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_update_${updateError.code}`)
-  }
 } else {
-      const { error: insertError } = await supabase
-        .from('chatters')
-        .insert({
-          kick_user_id: String(user.user_id),
-          username: user.name,
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-        })
+  const { data: byName } = await supabase
+    .from('chatters')
+    .select('id')
+    .ilike('username', user.name)
+    .maybeSingle()
 
-     if (insertError) {
-  console.error('Insert error:', JSON.stringify(insertError))
-  return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_insert_${insertError.code}`)
+  if (byName) {
+    await supabase
+      .from('chatters')
+      .update({
+        kick_user_id: String(user.user_id),
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      })
+      .eq('id', byName.id)
+  } else {
+    const { error: insertError } = await supabase
+      .from('chatters')
+      .insert({
+        kick_user_id: String(user.user_id),
+        username: user.name,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      })
+
+    if (insertError) {
+      console.error('Insert error:', JSON.stringify(insertError))
+      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
+    }
+  }
 }
     }
 
