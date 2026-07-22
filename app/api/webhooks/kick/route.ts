@@ -173,8 +173,6 @@ async function handleChatMessage(body: any) {
 
     await supabase
       .from('games')
-      .update({ current_question_index: nextIndex })
-      .eq('id', game.id)
   }
 }
 
