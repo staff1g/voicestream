@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
@@ -34,15 +33,7 @@ export default function Sidebar({ username }: { username: string }) {
         {menuItems.map((item) => {
           const active = pathname === item.href
           return (
-            
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-                active
-                  ? 'bg-purple-600/20 text-purple-400'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
+            <a key={item.href} href={item.href} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${active ? 'bg-purple-600/20 text-purple-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
               <i className={`ti ${item.icon} text-lg`}></i>
               <span>{item.label}</span>
             </a>
