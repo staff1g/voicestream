@@ -38,16 +38,6 @@ export default function GamesDashboard() {
     setUsername(decodeURIComponent(name))
   }, [])
 
-  useEffect(() => {
-  if (!gameId) return
-  fetchGameState()
-  pollRef.current = setInterval(() => {
-    if (!document.querySelector('[data-winner-dialog]')) {
-      fetchGameState()
-    }
-  }, 3000)
-  return () => clearInterval(pollRef.current)
-}, [gameId])
 
  useEffect(() => {
   if (!gameId) return
