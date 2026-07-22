@@ -292,6 +292,7 @@ async function fetchGameState() {
       body: JSON.stringify({ gameId }),
     })
     setWinner(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }}
   className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 py-3 font-semibold"
 >
