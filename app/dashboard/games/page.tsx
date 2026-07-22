@@ -285,11 +285,18 @@ async function fetchGameState() {
         Trouve par <span className="text-purple-400 font-semibold">{winner.name}</span>
       </p>
       <button
-        onClick={() => setWinner(null)}
-        className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 py-3 font-semibold"
-      >
-        Question suivante
-      </button>
+  onClick={async () => {
+    await fetch('/api/games/next-question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId }),
+    })
+    setWinner(null)
+  }}
+  className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 py-3 font-semibold"
+>
+  Question suivante
+</button>
     </div>
   </div>
 )}
