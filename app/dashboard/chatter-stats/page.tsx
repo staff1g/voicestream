@@ -1,4 +1,3 @@
- 
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -8,6 +7,10 @@ export default function ChatterStatsDashboard() {
   const [username, setUsername] = useState('')
   const [chatters, setChatters] = useState<any[]>([])
   const [selectedChatter, setSelectedChatter] = useState<any>(null)
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'messages' | 'streams'>('messages')
+  const [page, setPage] = useState(0)
+  const perPage = 10
   const router = useRouter()
 
   useEffect(() => {
@@ -36,6 +39,20 @@ export default function ChatterStatsDashboard() {
     const data = await res.json()
     setSelectedChatter(data)
   }
+
+  const filtered = chatters
+    .filter((c: any) => c.username.toLowerCase().includes(search.toLowerCase()))
+    .sort((a: any, b: any) => {
+      if (sortBy === 'streams') return b.presenceCount - a.presenceCount
+      return b.totalMessages - a.totalMessages
+    })
+
+  const totalPages = Math.ceil(filtered.length / perPage)
+  const paginated = filtered.slice(page * perPage, (page + 1) * perPage)
+
+  useEffect(() => {
+    setPage(0)
+  }, [search, sortBy])
 
   if (selectedChatter) {
     return (
@@ -81,23 +98,69 @@ export default function ChatterStatsDashboard() {
           <span className="text-gray-400">@{username}</span>
         </div>
 
-        {chatters.length === 0 ? (
-          <p className="text-gray-500 text-sm">Aucune activite enregistree pour le moment</p>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher un chatter..."
+          className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-sm outline-none mb-4 focus:border-purple-500 transition-colors"
+        />
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setSortBy('messages')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${sortBy === 'messages' ? 'bg-purple-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+          >
+            Par messages
+          </button>
+          <button
+            onClick={() => setSortBy('streams')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${sortBy === 'streams' ? 'bg-purple-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+          >
+            Par streams
+          </button>
+        </div>
+
+        {paginated.length === 0 ? (
+          <p className="text-gray-500 text-sm">Aucun chatter trouve</p>
         ) : (
           <div className="space-y-2">
-            {chatters.map((c: any) => (
+            {paginated.map((c: any, i: number) => (
               <button
                 key={c.username}
                 onClick={() => viewChatter(c.username)}
                 className="w-full bg-gray-900 hover:bg-gray-800 rounded-lg p-4 flex items-center justify-between transition-all"
               >
-                <span className="font-medium">{c.username}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-500 text-sm w-6">{page * perPage + i + 1}</span>
+                  <span className="font-medium">{c.username}</span>
+                </div>
                 <div className="flex gap-4 text-sm text-gray-400">
                   <span>{c.presenceCount} streams</span>
-                  <span>{c.totalMessages} messages</span>
+                  <span>{c.totalMessages} msgs</span>
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <button
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm disabled:opacity-30"
+            >
+              Precedent
+            </button>
+            <span className="text-gray-400 text-sm">{page + 1} / {totalPages}</span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm disabled:opacity-30"
+            >
+              Suivant
+            </button>
           </div>
         )}
       </div>
