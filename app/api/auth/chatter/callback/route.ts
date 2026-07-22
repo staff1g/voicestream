@@ -46,16 +46,21 @@ export async function GET(request: NextRequest) {
       .ilike('username', user.name)
       .maybeSingle()
 
-    if (existing) {
-      await supabase
-        .from('chatters')
-        .update({
-          kick_user_id: String(user.user_id),
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-        })
-        .eq('id', existing.id)
-    } else {
+  if (existing) {
+  const { error: updateError } = await supabase
+    .from('chatters')
+    .update({
+      kick_user_id: String(user.user_id),
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    })
+    .eq('id', existing.id)
+
+  if (updateError) {
+    console.error('Update error:', JSON.stringify(updateError))
+    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_update_${updateError.code}`)
+  }
+} else {
       const { error: insertError } = await supabase
         .from('chatters')
         .insert({
@@ -65,10 +70,10 @@ export async function GET(request: NextRequest) {
           refresh_token: tokens.refresh_token,
         })
 
-      if (insertError) {
-        console.error('Insert error:', insertError)
-        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
-      }
+     if (insertError) {
+  console.error('Insert error:', JSON.stringify(insertError))
+  return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_insert_${insertError.code}`)
+}
     }
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/streamers`)
