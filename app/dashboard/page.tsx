@@ -94,7 +94,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
               <i className="ti ti-microphone-2 text-white text-lg"></i>
             </div>
-            <h1 className="text-xl font-semibold text-white tracking-tight">VoiceStream</h1>
+            <h1 className="text-xl font-semibold text-white tracking-tight">BezBez</h1>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2">

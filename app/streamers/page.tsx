@@ -43,7 +43,7 @@ export default function Streamers() {
     <main className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">VoiceStream</h1>
+          <h1 className="text-2xl font-bold">BezBez</h1>
           <div className="flex items-center gap-3">
             <span className="text-gray-400">@{username}</span>
             <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors">

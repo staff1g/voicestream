@@ -119,7 +119,7 @@ export default function Dashboard() {
             <a href="/dashboard" className="text-sm text-gray-500 hover:text-white mb-2 inline-block">
               Retour au dashboard
             </a>
-            <h1 className="text-2xl font-bold">VoiceStream</h1>
+            <h1 className="text-2xl font-bold">BezBez</h1>
           </div>
           <span className="text-gray-400">@{username}</span>
         </div>
