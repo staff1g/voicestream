@@ -60,7 +60,7 @@ async function findOrCreateChatter(kickUserId: string, username: string) {
   return newChatter
 }
 
-async function addPasses(chatterId: string, streamerId: string, amount: number) {
+async function addPasses(chatterId: string, streamerId: string, amount: number, chatterUsername?: string, streamerUsername?: string) {
   const { data: existing } = await supabase
     .from('chatter_passes')
     .select('passes')
@@ -77,7 +77,13 @@ async function addPasses(chatterId: string, streamerId: string, amount: number) 
   } else {
     await supabase
       .from('chatter_passes')
-      .insert({ chatter_id: chatterId, streamer_id: streamerId, passes: amount })
+      .insert({
+        chatter_id: chatterId,
+        streamer_id: streamerId,
+        passes: amount,
+        chatter_username: chatterUsername,
+        streamer_username: streamerUsername,
+      })
   }
 }
 
@@ -99,7 +105,8 @@ async function handleRewardRedemption(body: any) {
   const chatter = await findOrCreateChatter(chatterKickId, chatterUsername)
   if (!chatter) return
 
-  await addPasses(chatter.id, streamer.id, 1)
+  const { data: streamerData } = await supabase.from('streamers').select('username').eq('id', streamer.id).maybeSingle()
+  await addPasses(chatter.id, streamer.id, 1, chatterUsername, streamerData?.username)
 }
 
 async function handleChatMessage(body: any) {
@@ -194,16 +201,7 @@ async function handleChatActivity(body: any) {
     .order('started_at', { ascending: false })
     .limit(1)
 
-  let session = sessions?.[0]
-
-  if (!session) {
-    const { data: newSession } = await supabase
-      .from('stream_sessions')
-      .insert({ streamer_id: streamer.id })
-      .select()
-      .single()
-    session = newSession
-  }
+  const session = sessions?.[0]
 
   if (!session) return
 
@@ -230,9 +228,15 @@ async function handleStreamStatus(body: any) {
   if (!streamer) return
 
   if (isLive) {
+    const { data: streamerData } = await supabase
+      .from('streamers')
+      .select('username')
+      .eq('id', streamer.id)
+      .maybeSingle()
+
     await supabase
       .from('stream_sessions')
-      .insert({ streamer_id: streamer.id })
+      .insert({ streamer_id: streamer.id, streamer_username: streamerData?.username })
   } else {
     await supabase
       .from('stream_sessions')
@@ -260,5 +264,6 @@ async function handleNewSubscription(body: any) {
   const chatter = await findOrCreateChatter(subscriberKickId, subscriberUsername)
   if (!chatter) return
 
-  await addPasses(chatter.id, streamer.id, 5)
+  const { data: streamerData } = await supabase.from('streamers').select('username').eq('id', streamer.id).maybeSingle()
+  await addPasses(chatter.id, streamer.id, 5, subscriberUsername, streamerData?.username)
 }
