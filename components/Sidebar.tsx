@@ -41,7 +41,13 @@ export default function Sidebar({ username }: { username: string }) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/5">
+      <div className="px-2 py-2 mb-1">
+  <a href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+    <i className="ti ti-user text-lg"></i>
+    <span>Mon profil</span>
+  </a>
+</div>
+<div className="p-3 border-t border-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-purple-600/30 flex items-center justify-center text-xs text-purple-400 font-medium">
