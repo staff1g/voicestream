@@ -1,4 +1,3 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -41,16 +40,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=no_user`)
     }
 
-    const { error: upsertError } = await supabase.from('chatters').upsert({
-      kick_user_id: String(user.user_id),
-      username: user.name,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    }, { onConflict: 'kick_user_id' })
+    const { data: existing } = await supabase
+      .from('chatters')
+      .select('id')
+      .ilike('username', user.name)
+      .maybeSingle()
 
-    if (upsertError) {
-      console.error('Supabase error:', upsertError)
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
+    if (existing) {
+      await supabase
+        .from('chatters')
+        .update({
+          kick_user_id: String(user.user_id),
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        })
+        .eq('id', existing.id)
+    } else {
+      const { error: insertError } = await supabase
+        .from('chatters')
+        .insert({
+          kick_user_id: String(user.user_id),
+          username: user.name,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        })
+
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
+      }
     }
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/streamers`)
