@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const menuItems = [
   { href: '/dashboard', icon: 'ti-home', label: 'Dashboard' },
@@ -15,6 +16,22 @@ const menuItems = [
 export default function Sidebar({ username }: { username: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [profilePicture, setProfilePicture] = useState('')
+
+  useEffect(() => {
+    fetchProfile()
+  }, [username])
+
+  async function fetchProfile() {
+    if (!username) return
+    try {
+      const res = await fetch(`/api/profile?username=${username}&role=streamer`)
+      const data = await res.json()
+      if (data.profile?.profile_picture) {
+        setProfilePicture(data.profile.profile_picture)
+      }
+    } catch {}
+  }
 
   function logout() {
     document.cookie = 'kick_username=; path=/; max-age=0'
@@ -41,24 +58,21 @@ export default function Sidebar({ username }: { username: string }) {
         })}
       </nav>
 
-      <div className="px-2 py-2 mb-1">
-  <a href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-    <i className="ti ti-user text-lg"></i>
-    <span>Mon profil</span>
-  </a>
-</div>
-<div className="p-3 border-t border-white/5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="p-3 border-t border-white/5 space-y-2">
+        <a href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+          {profilePicture ? (
+            <img src={profilePicture} alt="" className="w-7 h-7 rounded-full object-cover" />
+          ) : (
             <div className="w-7 h-7 rounded-full bg-purple-600/30 flex items-center justify-center text-xs text-purple-400 font-medium">
               {username?.charAt(0)?.toUpperCase()}
             </div>
-            <span className="text-gray-300 text-xs">{username}</span>
-          </div>
-          <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors">
-            <i className="ti ti-logout text-base"></i>
-          </button>
-        </div>
+          )}
+          <span>{username}</span>
+        </a>
+        <button onClick={logout} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-red-600/10 hover:text-red-400 transition-all w-full">
+          <i className="ti ti-logout text-lg"></i>
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   )
