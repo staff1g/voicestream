@@ -41,9 +41,26 @@ export default function Sidebar({ username }: { username: string }) {
 
   return (
     <aside className="fixed top-0 left-0 h-full w-56 bg-gray-950 border-r border-white/5 flex flex-col z-40">
-      <div className="p-4 flex items-center gap-2">
-        <img src="/logo.svg" alt="BezBez" width={28} height={28} />
-        <span className="text-white font-semibold text-sm">BezBez</span>
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <img src="/logo.svg" alt="BezBez" width={28} height={28} />
+          <span className="text-white font-semibold text-sm">BezBez</span>
+        </div>
+        <a href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          {profilePicture ? (
+            <img src={profilePicture} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-purple-600/30 flex items-center justify-center text-xs text-purple-400 font-medium border border-white/10">
+              {username?.charAt(0)?.toUpperCase()}
+            </div>
+          )}
+        </a>
+      </div>
+
+      <div className="px-4 pb-3">
+        <a href="/profile" className="text-gray-300 text-sm hover:text-purple-400 transition-colors">
+          {username}
+        </a>
       </div>
 
       <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
@@ -58,17 +75,7 @@ export default function Sidebar({ username }: { username: string }) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/5 space-y-2">
-        <a href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all">
-          {profilePicture ? (
-            <img src={profilePicture} alt="" className="w-7 h-7 rounded-full object-cover" />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-purple-600/30 flex items-center justify-center text-xs text-purple-400 font-medium">
-              {username?.charAt(0)?.toUpperCase()}
-            </div>
-          )}
-          <span>{username}</span>
-        </a>
+      <div className="p-3 border-t border-white/5">
         <button onClick={logout} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-red-600/10 hover:text-red-400 transition-all w-full">
           <i className="ti ti-logout text-lg"></i>
           <span>Logout</span>
