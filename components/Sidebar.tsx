@@ -1,7 +1,6 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 
 const menuItems = [
   { href: '/dashboard', icon: 'ti-home', label: 'Dashboard' },
@@ -16,22 +15,6 @@ const menuItems = [
 export default function Sidebar({ username }: { username: string }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [profilePicture, setProfilePicture] = useState('')
-
-  useEffect(() => {
-    fetchProfile()
-  }, [username])
-
-  async function fetchProfile() {
-    if (!username) return
-    try {
-      const res = await fetch(`/api/profile?username=${username}&role=streamer`)
-      const data = await res.json()
-      if (data.profile?.profile_picture) {
-        setProfilePicture(data.profile.profile_picture)
-      }
-    } catch {}
-  }
 
   function logout() {
     document.cookie = 'kick_username=; path=/; max-age=0'
@@ -41,26 +24,9 @@ export default function Sidebar({ username }: { username: string }) {
 
   return (
     <aside className="fixed top-0 left-0 h-full w-56 bg-gray-950 border-r border-white/5 flex flex-col z-40">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="BezBez" width={28} height={28} />
-          <span className="text-white font-semibold text-sm">BezBez</span>
-        </div>
-        <a href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          {profilePicture ? (
-            <img src={profilePicture} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-purple-600/30 flex items-center justify-center text-xs text-purple-400 font-medium border border-white/10">
-              {username?.charAt(0)?.toUpperCase()}
-            </div>
-          )}
-        </a>
-      </div>
-
-      <div className="px-4 pb-3">
-        <a href="/profile" className="text-gray-300 text-sm hover:text-purple-400 transition-colors">
-          {username}
-        </a>
+      <div className="p-4 flex items-center gap-2">
+        <img src="/logo.svg" alt="BezBez" width={28} height={28} />
+        <span className="text-white font-semibold text-sm">BezBez</span>
       </div>
 
       <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
