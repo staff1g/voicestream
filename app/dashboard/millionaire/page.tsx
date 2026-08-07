@@ -8,8 +8,11 @@ const emptyQuestion = () => ({ question: '', optionA: '', optionB: '', optionC: 
 export default function MillionaireDashboard() {
   const [username, setUsername] = useState('')
   const [quizName, setQuizName] = useState('')
-const [questions, setQuestions] = useState(Array.from({ length: 15 }, emptyQuestion))  const [submitting, setSubmitting] = useState(false)
-  const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
+const [questions, setQuestions] = useState(() =>
+  Array.from({ length: 15 }, () => ({ ...emptyQuestion }))
+);
+
+const [submitting, setSubmitting] = useState(false);  const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [obsCopied, setObsCopied] = useState(false)
   const router = useRouter()
