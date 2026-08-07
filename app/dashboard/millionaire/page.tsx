@@ -65,9 +65,14 @@ const [submitting, setSubmitting] = useState(false);  const [status, setStatus] 
       })
       const data = await res.json()
       if (res.ok) {
-        setStatus({ msg: 'Quiz cree !', type: 'success' })
-        setQuizName('')
-setQuestions(Array.from({ length: 15 }, emptyQuestion))        fetchQuizzes(username)
+       setStatus({ msg: 'Quiz cree !', type: 'success' });
+setQuizName('');
+
+setQuestions(
+  Array.from({ length: 15 }, () => ({ ...emptyQuestion }))
+);
+
+fetchQuizzes(username);
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }
