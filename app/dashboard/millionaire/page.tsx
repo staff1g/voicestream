@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const AMOUNTS = ['500', '1 000', '2 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '750 000', '1 000 000', '2 500 000', '5 000 000']
-const emptyQuestion = () => ({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctOption: 'A' })
+const emptyQuestion = ({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctOption: 'A' })
 export default function MillionaireDashboard() {
   const [username, setUsername] = useState('')
   const [quizName, setQuizName] = useState('')
