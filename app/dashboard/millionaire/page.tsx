@@ -3,15 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const AMOUNTS = ['1 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '1 000 000']
-
+const AMOUNTS = ['500', '1 000', '2 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '750 000', '1 000 000', '2 500 000', '5 000 000']
 const emptyQuestion = () => ({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctOption: 'A' })
-
 export default function MillionaireDashboard() {
   const [username, setUsername] = useState('')
   const [quizName, setQuizName] = useState('')
-  const [questions, setQuestions] = useState(Array.from({ length: 10 }, emptyQuestion))
-  const [submitting, setSubmitting] = useState(false)
+const [questions, setQuestions] = useState(Array.from({ length: 15 }, emptyQuestion))  const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [obsCopied, setObsCopied] = useState(false)
@@ -52,10 +49,10 @@ export default function MillionaireDashboard() {
       return
     }
     const filled = questions.filter(q => q.question.trim() && q.optionA.trim() && q.optionB.trim() && q.optionC.trim() && q.optionD.trim())
-    if (filled.length < 10) {
-      setStatus({ msg: 'Remplis les 10 questions', type: 'error' })
-      return
-    }
+    if (filled.length < 15) {
+  setStatus({ msg: 'Remplis les 15 questions', type: 'error' })
+  return
+}
     setSubmitting(true)
     try {
       const res = await fetch('/api/millionaire/create-quiz', {
@@ -67,8 +64,7 @@ export default function MillionaireDashboard() {
       if (res.ok) {
         setStatus({ msg: 'Quiz cree !', type: 'success' })
         setQuizName('')
-        setQuestions(Array.from({ length: 10 }, emptyQuestion))
-        fetchQuizzes(username)
+setQuestions(Array.from({ length: 15 }, emptyQuestion))        fetchQuizzes(username)
       } else {
         setStatus({ msg: data.error || 'Erreur', type: 'error' })
       }

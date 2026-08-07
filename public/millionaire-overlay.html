@@ -22,8 +22,8 @@
     width: 13%;
   }
   .ladder-row {
-    height: 4vh;
-    min-height: 26px;
+    height: 2.8 vh;
+    min-height: 20px;
     margin-bottom: 2px;
     display: flex;
     align-items: center;
@@ -158,8 +158,7 @@
   const STREAMER = new URLSearchParams(window.location.search).get('streamer')
   const SERVER = new URLSearchParams(window.location.search).get('server') || window.location.origin
 
-  const AMOUNTS = ['1 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '1 000 000']
-
+const AMOUNTS = ['500', '1 000', '2 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '750 000', '1 000 000', '2 500 000', '5 000 000']
   const content = document.getElementById('content')
   const ladderEl = document.getElementById('ladder')
   const qboxEl = document.getElementById('qbox')
@@ -167,16 +166,16 @@
   const timerEl = document.getElementById('timer')
 
   function renderLadder(playingLevel) {
-    ladderEl.innerHTML = ''
-    for (let i = 10; i >= 1; i--) {
-      const row = document.createElement('div')
-      row.className = 'ladder-row'
-      if (i === 10) row.classList.add('top')
-      if (i === playingLevel) row.classList.add('current')
-      row.innerHTML = `<span>${i}</span><span>${AMOUNTS[i - 1]}</span>`
-      ladderEl.appendChild(row)
-    }
+  ladderEl.innerHTML = ''
+  for (let i = 15; i >= 1; i--) {
+    const row = document.createElement('div')
+    row.className = 'ladder-row'
+    if (i === 15) row.classList.add('top')
+    if (i === playingLevel) row.classList.add('current')
+    row.innerHTML = `<span>${i}</span><span>${AMOUNTS[i - 1]}</span>`
+    ladderEl.appendChild(row)
   }
+}
 
   function renderQuestion(question, eliminated, lastChosen, lastStatus) {
     qboxEl.textContent = question.question_text
