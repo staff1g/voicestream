@@ -81,6 +81,15 @@ export default function Dashboard() {
       iconColor: 'text-rose-400',
       glow: 'group-hover:shadow-rose-500/20',
     },
+    {
+      href: '/dashboard/chatter-moderation',
+      icon: 'ti-shield-off',
+      title: 'Chatter moderation',
+      desc: 'Ban or unban chatters from voice messages',
+      color: 'from-red-500/20 to-orange-500/20',
+      iconColor: 'text-red-400',
+      glow: 'group-hover:shadow-red-500/20',
+    },
   ]
 
   return (
