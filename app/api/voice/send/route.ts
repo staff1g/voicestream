@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+
+
+
 export async function POST(request: NextRequest) {
   try {
     const form = await request.formData()
     const audio = form.get('audio') as File
     const streamerUsername = form.get('streamer') as string
     const chatterUsername = form.get('chatter_username') as string || 'Anonyme'
+
+// Check if chatter is banned by streamer and escape directly when true
+    const { data: banRecord } = await supabase
+      .from("streamer_banned_chatters")
+      .select("id")
+      .ilike("streamer_username", streamerUsername)
+      .ilike("chatter_username", chatterUsername)
+      .maybeSingle();
+
+    if (banRecord) {
+      return NextResponse.json(
+        { error: "Tu es banni(e) des messages vocaux chez ce streamer" },
+        { status: 403 }
+      );
+    }
 
     if (!audio || !streamerUsername) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })

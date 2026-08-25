@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import BanToggle from '@/components/BanToggle'
 
 export default function ChatterStatsDashboard() {
   const [username, setUsername] = useState('')
@@ -126,20 +127,31 @@ export default function ChatterStatsDashboard() {
         ) : (
           <div className="space-y-2">
             {paginated.map((c: any, i: number) => (
-              <button
-                key={c.username}
-                onClick={() => viewChatter(c.username)}
-                className="w-full bg-gray-900 hover:bg-gray-800 rounded-lg p-4 flex items-center justify-between transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 text-sm w-6">{page * perPage + i + 1}</span>
-                  <span className="font-medium">{c.username}</span>
-                </div>
-                <div className="flex gap-4 text-sm text-gray-400">
-                  <span>{c.presenceCount} streams</span>
-                  <span>{c.totalMessages} msgs</span>
-                </div>
-              </button>
+          <div
+            key={c.username}
+            className="w-full bg-gray-900 hover:bg-gray-800 rounded-lg p-4 flex items-center justify-between transition-all"
+          >
+            <button
+              onClick={() => viewChatter(c.username)}
+              className="flex items-center gap-3"
+            >
+              <span className="text-gray-500 text-sm w-6">
+                {page * perPage + i + 1}
+              </span>
+              <span className="font-medium">{c.username}</span>
+            </button>
+                      
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <span>{c.presenceCount} streams</span>
+              <span>{c.totalMessages} msgs</span>
+                      
+              <BanToggle
+                streamerUsername={username} 
+                chatterUsername={c.username} 
+                initiallyBanned={c.isBanned || false}
+              />
+            </div>
+          </div>
             ))}
           </div>
         )}

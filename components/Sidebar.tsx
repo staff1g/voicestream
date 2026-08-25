@@ -10,6 +10,7 @@ const menuItems = [
   { href: '/dashboard/millionaire', icon: 'ti-diamond', label: 'Millionaire' },
   { href: '/dashboard/stream-stats', icon: 'ti-broadcast', label: 'Stream stats' },
   { href: '/dashboard/dating', icon: 'ti-heart', label: 'Dating' },
+  { href: '/dashboard/chatter-moderation', icon: 'ti-shield-off', label: 'Moderation' },
 ]
 
 export default function Sidebar({ username }: { username: string }) {
