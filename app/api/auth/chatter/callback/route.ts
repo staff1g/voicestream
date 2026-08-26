@@ -97,8 +97,9 @@ if (existing) {
     }
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/streamers`)
-    response.cookies.set('chatter_user_id', String(user.user_id), { httpOnly: true })
-    response.cookies.set('chatter_username', user.name)
+    const cookieOpts = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' as const }
+    response.cookies.set('chatter_user_id', String(user.user_id), { ...cookieOpts, httpOnly: true })
+    response.cookies.set('chatter_username', user.name, cookieOpts)
 
     return response
   } catch (error) {
