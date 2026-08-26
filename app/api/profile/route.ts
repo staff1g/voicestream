@@ -1,4 +1,3 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -12,9 +11,13 @@ export async function GET(request: NextRequest) {
 
   const table = role === 'streamer' ? 'streamers' : 'chatters'
 
+  const selectFields = role === 'streamer'
+    ? 'username, profile_picture, bio, approved'
+    : 'username, profile_picture, bio'
+
   const { data } = await supabase
     .from(table)
-    .select('username, profile_picture, bio')
+    .select(selectFields)
     .ilike('username', username)
     .maybeSingle()
 
