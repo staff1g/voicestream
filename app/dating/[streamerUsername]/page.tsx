@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function DatingPage({ params }: { params: Promise<{ streamerUsername: string }> }) {
   const { streamerUsername } = use(params)
-  const router = useRouter()
   const [chatterUsername, setChatterUsername] = useState('')
   const [profile, setProfile] = useState<any>(null)
   const [profiles, setProfiles] = useState<any[]>([])
@@ -17,7 +15,7 @@ export default function DatingPage({ params }: { params: Promise<{ streamerUsern
 
   useEffect(() => {
     const name = document.cookie.split('; ').find(r => r.startsWith('chatter_username='))?.split('=')[1]
-    if (!name) { router.push('/'); return }
+    if (!name) return
     const decoded = decodeURIComponent(name)
     setChatterUsername(decoded)
     fetchProfile(decoded)

@@ -1,16 +1,16 @@
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASSWORD,
+    user: 'resend',
+    pass: process.env.RESEND_API_KEY,
   },
 })
 
-const from = `"BezBez" <${process.env.SMTP_EMAIL}>`
+const from = `"BezBez" <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`
 
 // ─── Shared layout ──────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ export async function sendStreamerRejectedEmail(streamerEmail: string, streamerU
   await transporter.sendMail({
     from,
     to: streamerEmail,
-    subject: `BezBez - Demande d'acces refusee`,
+    subject: `BezBez — Demande d'acces refusee`,
     html,
   })
 }

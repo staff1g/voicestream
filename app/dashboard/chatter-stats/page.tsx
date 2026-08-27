@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import BanToggle from '@/components/BanToggle'
 
 export default function ChatterStatsDashboard() {
@@ -12,7 +11,6 @@ export default function ChatterStatsDashboard() {
   const [sortBy, setSortBy] = useState<'messages' | 'streams'>('messages')
   const [page, setPage] = useState(0)
   const perPage = 10
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie
@@ -20,10 +18,7 @@ export default function ChatterStatsDashboard() {
       .find(r => r.startsWith('kick_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+    if (!name) return
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
     fetchChatters(decoded)

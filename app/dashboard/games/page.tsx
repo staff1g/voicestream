@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function GamesDashboard() {
   const [username, setUsername] = useState('')
@@ -21,7 +20,6 @@ export default function GamesDashboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isDrawingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
   const pollRef = useRef<any>(null)
   const [winner, setWinner] = useState<{ name: string; answer: string } | null>(null)
 
@@ -31,10 +29,7 @@ export default function GamesDashboard() {
       .find(r => r.startsWith('kick_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+    if (!name) return
     setUsername(decodeURIComponent(name))
   }, [])
 

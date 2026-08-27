@@ -1,13 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function Streamers() {
   const [username, setUsername] = useState('')
   const [streamers, setStreamers] = useState<any[]>([])
   const [search, setSearch] = useState('')
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie
@@ -15,11 +13,9 @@ export default function Streamers() {
       .find(r => r.startsWith('chatter_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
+    if (name) {
+      setUsername(decodeURIComponent(name))
     }
-    setUsername(decodeURIComponent(name))
     fetchStreamers()
   }, [])
 
@@ -29,10 +25,9 @@ export default function Streamers() {
     setStreamers(data.streamers || [])
   }
 
-  function logout() {
-    document.cookie = 'kick_username=; path=/; max-age=0'
-    document.cookie = 'chatter_username=; path=/; max-age=0'
-    router.push('/')
+  async function logout() {
+    await fetch('/api/auth/session', { method: 'DELETE' })
+    window.location.href = '/'
   }
 
   const filtered = streamers.filter((s: any) =>
@@ -68,16 +63,16 @@ export default function Streamers() {
           <div className="grid grid-cols-2 gap-4">
             {filtered.map((s: any) => (
               <div key={s.id} className="bg-gray-900 rounded-xl p-5">
-  <p className="font-medium text-lg mb-3">{s.username}</p>
-  <div className="flex gap-2">
-    <a href={`/chatter/${s.username}`} className="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg p-2 text-center text-sm transition-all">
-      Voice msg
-    </a>
-    <a href={`/dating/${s.username}`} className="flex-1 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 rounded-lg p-2 text-center text-sm transition-all">
-      Dating
-    </a>
-  </div>
-</div>
+                <p className="font-medium text-lg mb-3">{s.username}</p>
+                <div className="flex gap-2">
+                  <a href={`/chatter/${s.username}`} className="flex-1 bg-gray-800 hover:bg-gray-700 rounded-lg p-2 text-center text-sm transition-all">
+                    Voice msg
+                  </a>
+                  <a href={`/dating/${s.username}`} className="flex-1 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 rounded-lg p-2 text-center text-sm transition-all">
+                    Dating
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         )}

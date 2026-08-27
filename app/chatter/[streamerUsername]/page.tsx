@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function ChatterSendPage({ params }: { params: Promise<{ streamerUsername: string }> }) {
   const { streamerUsername } = use(params)
-  const router = useRouter()
   const [chatterUsername, setChatterUsername] = useState('')
   const [passes, setPasses] = useState(0)
   const [recording, setRecording] = useState(false)
@@ -27,10 +25,7 @@ export default function ChatterSendPage({ params }: { params: Promise<{ streamer
       .find(r => r.startsWith('chatter_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+    if (!name) return
     setChatterUsername(decodeURIComponent(name))
     fetchPasses(decodeURIComponent(name))
   }, [])

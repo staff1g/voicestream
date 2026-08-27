@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 const menuItems = [
   { href: '/dashboard', icon: 'ti-home', label: 'Dashboard' },
@@ -15,12 +15,10 @@ const menuItems = [
 
 export default function Sidebar({ username }: { username: string }) {
   const pathname = usePathname()
-  const router = useRouter()
 
-  function logout() {
-    document.cookie = 'kick_username=; path=/; max-age=0'
-    document.cookie = 'chatter_username=; path=/; max-age=0'
-    router.push('/')
+  async function logout() {
+    await fetch('/api/auth/session', { method: 'DELETE' })
+    window.location.href = '/'
   }
 
   return (

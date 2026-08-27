@@ -1,14 +1,43 @@
 'use client'
 
+import { useEffect, useState, useRef } from 'react'
+
 export default function Home() {
+  const [checking, setChecking] = useState(true)
+  const redirected = useRef(false)
+
+  useEffect(() => {
+    if (redirected.current) return
+    redirected.current = true
+
+    fetch('/api/auth/session')
+      .then(res => {
+        if (res.ok) return res.json()
+        throw new Error('no session')
+      })
+      .then(data => {
+        // Full browser navigation : no React re-render loop
+        if (data.role === 'streamer') {
+          window.location.replace('/dashboard')
+        } else {
+          setChecking(false)
+        }
+      })
+      .catch(() => {
+        setChecking(false)
+      })
+  }, [])
+
+  if (checking) return null
+
   return (
     <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-6">
       <div className="text-center max-w-lg">
         <div className="flex items-center justify-center gap-3 mb-4">
-  <img src="/logo.svg" alt="BezBez" width={200} height={200} />
-</div>
+          <img src="/logo.svg" alt="BezBez" width={200} height={200} />
+        </div>
         <p className="text-gray-400 text-lg mb-8">
-          Messages vocaux en direct, jeux interactifs, statistiques de stream. tout ce qu'il faut pour animer ta communaute Kick. Bienvenue chez les BezBeziens.
+          Messages vocaux en direct, jeux interactifs, statistiques de stream. tout ce qu&apos;il faut pour animer ta communaute Kick. Bienvenue chez les BezBeziens.
         </p>
 
         <div className="space-y-4">

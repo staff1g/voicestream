@@ -1,14 +1,12 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function StreamStats() {
   const [username, setUsername] = useState('')
   const [sessions, setSessions] = useState<any[]>([])
   const [tracking, setTracking] = useState(false)
   const pollRef = useRef<any>(null)
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie
@@ -16,10 +14,7 @@ export default function StreamStats() {
       .find(r => r.startsWith('kick_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+    if (!name) return
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
     fetchStats(decoded)

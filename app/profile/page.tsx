@@ -31,7 +31,7 @@ export default function ProfilePage() {
       setRole('chatter')
       fetchProfile(decoded, 'chatter')
     } else {
-      router.push('/')
+      return
     }
   }, [])
 

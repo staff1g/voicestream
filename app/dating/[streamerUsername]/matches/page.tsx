@@ -2,16 +2,14 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function MyMatches({ params }: { params: Promise<{ streamerUsername: string }> }) {
   const { streamerUsername } = use(params)
-  const router = useRouter()
   const [matches, setMatches] = useState<any[]>([])
 
   useEffect(() => {
     const name = document.cookie.split('; ').find(r => r.startsWith('chatter_username='))?.split('=')[1]
-    if (!name) { router.push('/'); return }
+    if (!name) return
     fetchMatches(decodeURIComponent(name))
   }, [])
 
