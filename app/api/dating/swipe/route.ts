@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
     const { fromProfileId, toProfileId, liked } = await request.json()
 
     if (!fromProfileId || !toProfileId) {
@@ -48,4 +52,4 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

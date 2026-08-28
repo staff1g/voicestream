@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
     const { chatterUsername, streamerUsername, displayName, bio, photoUrl, discordUsername, gender, lookingFor } = await request.json()
 
     if (!chatterUsername || !streamerUsername || !displayName || !gender || !lookingFor) {
@@ -86,4 +90,4 @@ export async function GET(request: NextRequest) {
     .maybeSingle()
 
   return NextResponse.json({ profile })
-} 
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const username = request.nextUrl.searchParams.get('username')
@@ -26,6 +27,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+  const auth = await requireAuth(request)
+  if (auth.error) return auth.error
+
     const form = await request.formData()
     const username = form.get('username') as string
     const role = form.get('role') as string || 'chatter'

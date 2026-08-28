@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 
 
 
 export async function POST(request: NextRequest) {
   try {
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
     const form = await request.formData()
     const audio = form.get('audio') as File
     const streamerUsername = form.get('streamer') as string

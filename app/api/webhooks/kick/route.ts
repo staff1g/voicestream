@@ -1,10 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import crypto from 'crypto'
+
+//  Kick's RSA public key (from https://api.kick.com/public/v1/public-key) 
+
+const KICK_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq/+l1WnlRrGSolDMA+A8
+6rAhMbQGmQ2SapVcGM3zq8ANXjnhDWocMqfWcTd95btDydITa10kDvHzw9WQOqp2
+MZI7ZyrfzJuz5nhTPCiJwTwnEtWft7nV14BYRDHvlfqPUaZ+1KR4OCaO/wWIk/rQ
+L/TjY0M70gse8rlBkbo2a8rKhu69RQTRsoaf4DVhDPEeSeI5jVrRDGAMGL3cGuyY
+6CLKGdjVEM78g3JfYOvDU/RvfqD7L89TZ3iN94jrmWdGz34JNlEI5hqK8dd7C5EF
+BEbZ5jgB8s8ReQV8H+MkuffjdAj3ajDDX3DOJMIut1lBrUVD1AaSrGCKHooWoL2e
+twIDAQAB
+-----END PUBLIC KEY-----`
+
+const MAX_AGE_MS = 5 * 60 * 1000 // 5 minutes replay window
+
+// Signature verification
+
+async function verifyWebhook(request: NextRequest): Promise<{ body: any; eventType: string } | NextResponse> {
+  const signature = request.headers.get('Kick-Event-Signature')
+  const messageId = request.headers.get('Kick-Event-Message-Id')
+  const timestamp = request.headers.get('Kick-Event-Message-Timestamp')
+  const eventType = request.headers.get('Kick-Event-Type')
+
+  if (!signature || !messageId || !timestamp || !eventType) {
+    return NextResponse.json({ error: 'Missing webhook headers' }, { status: 401 })
+  }
+
+  // Replay protection
+  const ts = new Date(timestamp).getTime()
+  if (isNaN(ts) || Math.abs(Date.now() - ts) > MAX_AGE_MS) {
+    return NextResponse.json({ error: 'Webhook timestamp too old' }, { status: 401 })
+  }
+
+  // Read raw body
+  const rawBody = await request.text()
+
+  // Build the signed payload: messageId.timestamp.rawBody
+  const signedPayload = `${messageId}.${timestamp}.${rawBody}`
+
+  // Verify RSA-SHA256 signature using Kick's public key
+  try {
+    const verifier = crypto.createVerify('SHA256')
+    verifier.update(signedPayload)
+    verifier.end()
+
+    const isValid = verifier.verify(KICK_PUBLIC_KEY, signature, 'base64')
+
+    if (!isValid) {
+      console.warn('Webhook signature verification failed — rejecting')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+  } catch (err) {
+    console.error('Signature verification error:', err)
+    return NextResponse.json({ error: 'Signature verification error' }, { status: 401 })
+  }
+
+  const body = JSON.parse(rawBody)
+  return { body, eventType }
+}
+
+// Main handler
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const eventType = request.headers.get('Kick-Event-Type')
+    const result = await verifyWebhook(request)
+
+    if (result instanceof NextResponse) return result
+
+    const { body, eventType } = result
 
     if (eventType === 'channel.reward.redemption.updated') {
       await handleRewardRedemption(body)
@@ -33,6 +98,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true })
   }
 }
+
+//  Helpers (unchanged) 
 
 async function findOrCreateChatter(kickUserId: string, username: string) {
   const { data: existing } = await supabase

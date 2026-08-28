@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
   const chatterUsername = request.nextUrl.searchParams.get('chatter')
   const streamerUsername = request.nextUrl.searchParams.get('streamer')
 
@@ -63,4 +67,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ matches: results })
-} 
+}
