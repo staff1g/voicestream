@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireOwnStreamer } from '@/lib/auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -22,6 +23,12 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // SECURITY FIX: previously this only checked "is the caller *a*
+    // streamer", not "is the caller *this* streamer". Any authenticated
+    // streamer could ban chatters out of a rival streamer's community.
+    const auth = await requireOwnStreamer(req, streamerUsername)
+    if (auth.error) return auth.error
 
     const normalizedStreamer = streamerUsername.trim().toLowerCase();
     const normalizedChatter = chatterUsername.trim().toLowerCase();
@@ -142,6 +149,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // SECURITY FIX: same ownership check as POST above.
+    const auth = await requireOwnStreamer(req, streamerUsername)
+    if (auth.error) return auth.error
+
     const normalizedStreamer = streamerUsername.trim().toLowerCase();
     const normalizedChatter = chatterUsername.trim().toLowerCase();
 
@@ -189,6 +200,11 @@ export async function GET(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // SECURITY FIX: same ownership check — a streamer's ban list is
+    // private, other streamers shouldn't be able to enumerate it.
+    const auth = await requireOwnStreamer(req, streamerUsername)
+    if (auth.error) return auth.error
 
     const normalizedStreamer = streamerUsername.trim().toLowerCase();
 

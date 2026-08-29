@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createSession } from '@/lib/session'
 import { sendApprovalEmail } from '@/lib/email'
+
+// SECURITY FIX: matches the new server-side session TTL in lib/session.ts
+// (30-day sliding window) - no point keeping a browser cookie alive far
+// longer than the server will actually honor it.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -41,13 +47,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=no_user`)
     }
 
-    // Log available fields once so the dev can check what Kick returns
     console.log('Kick user fields:', Object.keys(user))
-
-    // Grab email if Kick provides it (depends on API version / scope)
     const userEmail = user.email || null
 
-    // Check if this streamer already exists in DB
+    // Check if streamer already exists
     const { data: existingStreamer } = await supabase
       .from('streamers')
       .select('id, approved')
@@ -55,54 +58,50 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
 
     const isNew = !existingStreamer
+    let streamerId: string
 
     if (isNew) {
-      // New streamer: insert with approved = false
-      const { error: insertError } = await supabase.from('streamers').insert({
-        kick_user_id: String(user.user_id),
-        username: user.name,
-        email: userEmail,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        approved: false,
-      })
+      const { data: inserted, error: insertError } = await supabase
+        .from('streamers')
+        .insert({
+          kick_user_id: String(user.user_id),
+          username: user.name,
+          email: userEmail,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          approved: false,
+        })
+        .select('id')
+        .single()
 
-      if (insertError) {
+      if (insertError || !inserted) {
         console.error('Supabase insert error:', insertError)
         return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
       }
 
-      console.log('New streamer registered (pending approval):', user.name, '| email:', userEmail || 'not provided by Kick')
+      streamerId = inserted.id
+      console.log('New streamer registered (pending):', user.name)
 
-      // Send approval email to the app owner
       try {
-        await sendApprovalEmail(user.name, String(user.user_id))
+        await sendApprovalEmail(user.name, String(user.user_id), streamerId)
         console.log('Approval email sent for:', user.name)
       } catch (emailError) {
         console.error('Failed to send approval email:', emailError)
       }
     } else {
-      // Returning streamer: update tokens + email (in case they didn't have one before)
+      streamerId = existingStreamer.id
+
       const updateData: Record<string, string | null> = {
         username: user.name,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
       }
+      if (userEmail) updateData.email = userEmail
 
-      // Only overwrite email if we got one from Kick and the DB doesn't have one yet
-      if (userEmail) {
-        updateData.email = userEmail
-      }
-
-      const { error: updateError } = await supabase
+      await supabase
         .from('streamers')
         .update(updateData)
         .eq('kick_user_id', String(user.user_id))
-
-      if (updateError) {
-        console.error('Supabase update error:', updateError)
-        return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
-      }
 
       console.log('Streamer login:', user.name)
     }
@@ -131,10 +130,30 @@ export async function GET(request: NextRequest) {
       console.error('Auto-subscribe error:', subError)
     }
 
+    // Create secure session
+    const session = await createSession(streamerId, user.name, 'streamer', request.headers.get('user-agent') || undefined)
+
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard`)
-    const cookieOpts = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' as const }
-    response.cookies.set('kick_user_id', String(user.user_id), { ...cookieOpts, httpOnly: true })
-    response.cookies.set('kick_username', user.name, cookieOpts)
+    const sameSite = 'lax' as const
+
+    // Primary auth: httpOnly session token (not readable by JS)
+    response.cookies.set('bez_session', session.token, {
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
+      httpOnly: true,
+      sameSite,
+    })
+
+    // Backward compat: username cookie (readable by existing pages)
+    response.cookies.set('kick_username', user.name, {
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
+      sameSite,
+    })
+
+    // Clean up PKCE cookies
+    response.cookies.set('kick_code_verifier', '', { path: '/', maxAge: 0 })
+    response.cookies.set('kick_state', '', { path: '/', maxAge: 0 })
 
     return response
   } catch (error) {

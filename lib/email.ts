@@ -1,18 +1,19 @@
 import nodemailer from 'nodemailer'
+import { createAdminActionToken } from './adminTokens'
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASSWORD,
+    user: 'resend',
+    pass: process.env.RESEND_API_KEY,
   },
 })
 
-const from = `"BezBez" <${process.env.SMTP_EMAIL}>`
+const from = `"BezBez" <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`
 
-// ─── Shared layout ──────────────────────────────────────────────────
+// Shared layout 
 
 function wrapEmail(content: string) {
   return `<!DOCTYPE html>
@@ -31,13 +32,19 @@ ${content}
 </body></html>`
 }
 
-// ─── 1. Email to ADMIN: new streamer wants access ───────────────────
+//Email to ADMIN: new streamer wants access 
 
-export async function sendApprovalEmail(streamerUsername: string, kickUserId: string) {
+export async function sendApprovalEmail(streamerUsername: string, kickUserId: string, streamerId: string) {
   const baseUrl = process.env.NEXTAUTH_URL
-  const secret = process.env.ADMIN_SECRET
-  const approveUrl = `${baseUrl}/api/admin/approve?username=${encodeURIComponent(streamerUsername)}&token=${secret}`
-  const rejectUrl = `${baseUrl}/api/admin/reject?username=${encodeURIComponent(streamerUsername)}&token=${secret}`
+
+  // SECURITY FIX: previously both links embedded the same static
+  // ADMIN_SECRET, reusable forever for every streamer. Each link now gets
+  // its own random, single-use, expiring token tied to this specific
+  // streamer and this specific action.
+  const approveToken = await createAdminActionToken(streamerId, 'approve')
+  const rejectToken = await createAdminActionToken(streamerId, 'reject')
+  const approveUrl = `${baseUrl}/api/admin/approve?token=${approveToken}`
+  const rejectUrl = `${baseUrl}/api/admin/reject?token=${rejectToken}`
   const date = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })
 
   const html = wrapEmail(`
@@ -75,7 +82,7 @@ export async function sendApprovalEmail(streamerUsername: string, kickUserId: st
   })
 }
 
-// ─── 2. Email to STREAMER: approved ─────────────────────────────────
+//Email to STREAMER: approved 
 
 export async function sendStreamerApprovedEmail(streamerEmail: string, streamerUsername: string) {
   const dashboardUrl = `${process.env.NEXTAUTH_URL}/dashboard`
@@ -105,7 +112,7 @@ export async function sendStreamerApprovedEmail(streamerEmail: string, streamerU
   })
 }
 
-// ─── 3. Email to STREAMER: rejected ─────────────────────────────────
+// Email to STREAMER: rejected 
 
 export async function sendStreamerRejectedEmail(streamerEmail: string, streamerUsername: string) {
   const html = wrapEmail(`
@@ -123,7 +130,7 @@ export async function sendStreamerRejectedEmail(streamerEmail: string, streamerU
   await transporter.sendMail({
     from,
     to: streamerEmail,
-    subject: `BezBez - Demande d'acces refusee`,
+    subject: `BezBez — Demande d'acces refusee`,
     html,
   })
 }

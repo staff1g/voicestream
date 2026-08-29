@@ -1,12 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireChatter(request)
+    if (auth.error) return auth.error
+
     const { fromProfileId, toProfileId, liked } = await request.json()
 
     if (!fromProfileId || !toProfileId) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
+    }
+
+    // SECURITY FIX: verify fromProfileId actually belongs to the caller.
+    // Previously any authenticated chatter could pass ANY profile id as
+    // `fromProfileId` and record swipes/matches on someone else's behalf.
+    const { data: chatter } = await supabase
+      .from('chatters')
+      .select('id')
+      .ilike('username', auth.session.username)
+      .maybeSingle()
+
+    const { data: fromProfile } = await supabase
+      .from('dating_profiles')
+      .select('id, chatter_id')
+      .eq('id', fromProfileId)
+      .maybeSingle()
+
+    if (!chatter || !fromProfile || fromProfile.chatter_id !== chatter.id) {
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
     }
 
     await supabase
@@ -48,4 +71,4 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

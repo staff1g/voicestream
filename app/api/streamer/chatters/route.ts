@@ -1,6 +1,6 @@
- 
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   const streamerUsername = request.nextUrl.searchParams.get('streamer')
@@ -8,6 +8,10 @@ export async function GET(request: NextRequest) {
   if (!streamerUsername) {
     return NextResponse.json({ error: 'Streamer manquant' }, { status: 400 })
   }
+
+  // SECURITY FIX: verify the caller IS this streamer, not just any streamer
+  const auth = await requireOwnStreamer(request, streamerUsername)
+  if (auth.error) return auth.error
 
   const { data: streamer } = await supabase
     .from('streamers')

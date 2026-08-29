@@ -1,16 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function AdminDating() {
   const [username, setUsername] = useState('')
   const [matches, setMatches] = useState<any[]>([])
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie.split('; ').find(r => r.startsWith('kick_username='))?.split('=')[1]
-    if (!name) { router.push('/'); return }
+    if (!name) return
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
     fetchMatches(decoded)

@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function Dashboard() {
   const [username, setUsername] = useState('')
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie
@@ -13,17 +11,14 @@ export default function Dashboard() {
       .find(r => r.startsWith('kick_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
+    if (name) {
+      setUsername(decodeURIComponent(name))
     }
-    setUsername(decodeURIComponent(name))
   }, [])
 
-  function logout() {
-    document.cookie = 'kick_username=; path=/; max-age=0'
-    document.cookie = 'chatter_username=; path=/; max-age=0'
-    router.push('/')
+  async function logout() {
+    await fetch('/api/auth/session', { method: 'DELETE' })
+    window.location.href = '/'
   }
 
   const tools = [
@@ -112,6 +107,7 @@ export default function Dashboard() {
             </div>
             <button onClick={logout} className="flex items-center gap-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-3 py-2 text-sm text-gray-400 hover:text-red-400 hover:border-red-400/30 transition-colors">
               <i className="ti ti-logout text-base"></i>
+              <span>Logout</span>
             </button>
           </div>
         </div>

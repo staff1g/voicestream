@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +10,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
     }
 
+    // SECURITY FIX: verify caller owns this streamer account
+    const auth = await requireOwnStreamer(request, streamerUsername)
+    if (auth.error) return auth.error
+
     const { data: streamer } = await supabase
       .from('streamers')
       .select('id')
@@ -17,6 +22,20 @@ export async function POST(request: NextRequest) {
 
     if (!streamer) {
       return NextResponse.json({ error: 'Streamer introuvable' }, { status: 404 })
+    }
+
+    // SECURITY FIX: also verify the gameId being activated actually belongs
+    // to this streamer, not just that streamerUsername matches the session -
+    // otherwise a caller could pass their own username but someone else's
+    // gameId and activate/reset a quiz they don't own.
+    const { data: game } = await supabase
+      .from('millionaire_games')
+      .select('id, streamer_id')
+      .eq('id', gameId)
+      .maybeSingle()
+
+    if (!game || game.streamer_id !== streamer.id) {
+      return NextResponse.json({ error: 'Quiz introuvable' }, { status: 404 })
     }
 
     await supabase
@@ -44,4 +63,4 @@ export async function POST(request: NextRequest) {
     console.error('Activate quiz error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

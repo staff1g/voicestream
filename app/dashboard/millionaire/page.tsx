@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 const AMOUNTS = ['500', '1 000', '2 000', '4 000', '8 000', '16 000', '32 000', '64 000', '125 000', '250 000', '500 000', '750 000', '1 000 000', '2 500 000', '5 000 000']
 const emptyQuestion = ({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctOption: 'A' })
@@ -15,7 +14,6 @@ const [questions, setQuestions] = useState(() =>
 const [submitting, setSubmitting] = useState(false);  const [status, setStatus] = useState<{ msg: string; type: string } | null>(null)
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [obsCopied, setObsCopied] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     const name = document.cookie
@@ -23,10 +21,7 @@ const [submitting, setSubmitting] = useState(false);  const [status, setStatus] 
       .find(r => r.startsWith('kick_username='))
       ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+    if (!name) return
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
     fetchQuizzes(decoded)

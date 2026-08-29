@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireChatter } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
-  const chatterUsername = request.nextUrl.searchParams.get('chatter')
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
+  // SECURITY FIX: identity comes from the session, never from the
+  // client-supplied `chatter` query param - previously any chatter could
+  // pass someone else's username and read their matches' Discord handles.
+  const chatterUsername = auth.session.username
   const streamerUsername = request.nextUrl.searchParams.get('streamer')
 
-  if (!chatterUsername || !streamerUsername) {
+  if (!streamerUsername) {
     return NextResponse.json({ error: 'Params manquants' }, { status: 400 })
   }
 
@@ -63,4 +70,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ matches: results })
-} 
+}

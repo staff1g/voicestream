@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,11 @@ export async function POST(request: NextRequest) {
     if (!streamerUsername) {
       return NextResponse.json({ error: 'Streamer manquant' }, { status: 400 })
     }
+
+    // SECURITY FIX: this endpoint had NO authentication at all previously -
+    // anyone on the internet could trigger a streamer's lifelines for them.
+    const auth = await requireOwnStreamer(request, streamerUsername)
+    if (auth.error) return auth.error
 
     const { data: streamer } = await supabase
       .from('streamers')

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,10 @@ export async function POST(request: NextRequest) {
     if (!streamerUsername || !questions || !Array.isArray(questions) || questions.length === 0) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
+
+    // SECURITY FIX: verify caller owns this streamer account (IDOR fix)
+    const auth = await requireOwnStreamer(request, streamerUsername)
+    if (auth.error) return auth.error
 
     const { data: streamer } = await supabase
       .from('streamers')
@@ -53,4 +58,4 @@ export async function POST(request: NextRequest) {
     console.error('Create game error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

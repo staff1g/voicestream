@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createSession } from '@/lib/session'
+
+// SECURITY FIX: matches the new server-side session TTL in lib/session.ts
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -40,66 +44,84 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=no_user`)
     }
 
-    const { data: existing } = await supabase
+    // Upsert chatter 
+    let chatterId: string
+
+    const { data: byKickId } = await supabase
       .from('chatters')
       .select('id')
-      .ilike('username', user.name)
+      .eq('kick_user_id', String(user.user_id))
       .maybeSingle()
 
-  if (existing) {
-  const { data: existing } = await supabase
-  .from('chatters')
-  .select('id')
-  .eq('kick_user_id', String(user.user_id))
-  .maybeSingle()
+    if (byKickId) {
+      chatterId = byKickId.id
+      await supabase
+        .from('chatters')
+        .update({
+          username: user.name,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        })
+        .eq('id', byKickId.id)
+    } else {
+      const { data: byName } = await supabase
+        .from('chatters')
+        .select('id')
+        .ilike('username', user.name)
+        .maybeSingle()
 
-if (existing) {
-  await supabase
-    .from('chatters')
-    .update({
-      username: user.name,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    })
-    .eq('id', existing.id)
-} else {
-  const { data: byName } = await supabase
-    .from('chatters')
-    .select('id')
-    .ilike('username', user.name)
-    .maybeSingle()
+      if (byName) {
+        chatterId = byName.id
+        await supabase
+          .from('chatters')
+          .update({
+            kick_user_id: String(user.user_id),
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+          })
+          .eq('id', byName.id)
+      } else {
+        const { data: inserted, error: insertError } = await supabase
+          .from('chatters')
+          .insert({
+            kick_user_id: String(user.user_id),
+            username: user.name,
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+          })
+          .select('id')
+          .single()
 
-  if (byName) {
-    await supabase
-      .from('chatters')
-      .update({
-        kick_user_id: String(user.user_id),
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-      })
-      .eq('id', byName.id)
-  } else {
-    const { error: insertError } = await supabase
-      .from('chatters')
-      .insert({
-        kick_user_id: String(user.user_id),
-        username: user.name,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-      })
-
-    if (insertError) {
-      console.error('Insert error:', JSON.stringify(insertError))
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
+        if (insertError || !inserted) {
+          console.error('Insert error:', JSON.stringify(insertError))
+          return NextResponse.redirect(`${process.env.NEXTAUTH_URL}?error=db_error`)
+        }
+        chatterId = inserted.id
+      }
     }
-  }
-}
-    }
+
+    // Create secure session
+    const session = await createSession(chatterId, user.name, 'chatter', request.headers.get('user-agent') || undefined)
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/streamers`)
-    const cookieOpts = { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' as const }
-    response.cookies.set('chatter_user_id', String(user.user_id), { ...cookieOpts, httpOnly: true })
-    response.cookies.set('chatter_username', user.name, cookieOpts)
+    const sameSite = 'lax' as const
+
+    response.cookies.set('bez_session', session.token, {
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
+      httpOnly: true,
+      sameSite,
+    })
+
+    response.cookies.set('chatter_username', user.name, {
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
+      sameSite,
+    })
+
+    // Clean up PKCE cookies
+    response.cookies.set('chatter_code_verifier', '', { path: '/', maxAge: 0 })
+    response.cookies.set('chatter_state', '', { path: '/', maxAge: 0 })
 
     return response
   } catch (error) {

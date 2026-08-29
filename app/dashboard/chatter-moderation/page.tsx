@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import BanToggle from '@/components/BanToggle'
 
 interface Chatter {
@@ -25,28 +24,24 @@ export default function ChatterModeration() {
   const [page, setPage] = useState(0)
 
   const perPage = 10
-  const router = useRouter()
   const hasFetched = useRef(false)
 
-  useEffect(() => {
-    if (hasFetched.current) return
+useEffect(() => {
+  if (hasFetched.current) return
 
-    const name = document.cookie
-      .split('; ')
-      .find(r => r.startsWith('kick_username='))
-      ?.split('=')[1]
+  const name = document.cookie
+    .split('; ')
+    .find(r => r.startsWith('kick_username='))
+    ?.split('=')[1]
 
-    if (!name) {
-      router.push('/')
-      return
-    }
+  if (!name) return
 
-    const decoded = decodeURIComponent(name)
+  const decoded = decodeURIComponent(name)
 
-    setUsername(decoded)
-    hasFetched.current = true
-    loadAll(decoded)
-  }, [router])
+  setUsername(decoded)
+  hasFetched.current = true
+  loadAll(decoded)
+}, [])
 
   async function loadAll(name: string) {
     try {
