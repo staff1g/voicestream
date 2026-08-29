@@ -4,12 +4,17 @@ import { requireChatter } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-  const auth = await requireChatter(request)
-  if (auth.error) return auth.error
+    const auth = await requireChatter(request)
+    if (auth.error) return auth.error
 
-    const { chatterUsername, streamerUsername, displayName, bio, photoUrl, discordUsername, gender, lookingFor } = await request.json()
+    const { streamerUsername, displayName, bio, photoUrl, discordUsername, gender, lookingFor } = await request.json()
 
-    if (!chatterUsername || !streamerUsername || !displayName || !gender || !lookingFor) {
+    // SECURITY FIX: identity comes from the session, never from the client
+    // body. Previously `chatterUsername` was trusted from the request,
+    // letting any chatter create/overwrite another chatter's dating profile.
+    const chatterUsername = auth.session.username
+
+    if (!streamerUsername || !displayName || !gender || !lookingFor) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
     }
 
@@ -55,17 +60,23 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const chatterUsername = request.nextUrl.searchParams.get('chatter')
+  // SECURITY FIX: this endpoint had no auth at all and returned another
+  // chatter's dating profile (including Discord username) to anyone who
+  // knew/guessed their username. Require the caller to be a logged-in
+  // chatter, and only return their own profile.
+  const auth = await requireChatter(request)
+  if (auth.error) return auth.error
+
   const streamerUsername = request.nextUrl.searchParams.get('streamer')
 
-  if (!chatterUsername || !streamerUsername) {
+  if (!streamerUsername) {
     return NextResponse.json({ error: 'Params manquants' }, { status: 400 })
   }
 
   const { data: chatter } = await supabase
     .from('chatters')
     .select('id')
-    .ilike('username', chatterUsername)
+    .ilike('username', auth.session.username)
     .maybeSingle()
 
   if (!chatter) {

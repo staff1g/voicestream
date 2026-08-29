@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireStreamer } from '@/lib/auth'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-  const auth = await requireStreamer(request)
-  if (auth.error) return auth.error
-
     const { streamerUsername, chatterUsername, amount } = await request.json()
 
     if (!streamerUsername || !chatterUsername) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
     }
 
-    const callerUsername = request.cookies.get('kick_username')?.value
-    if (!callerUsername || callerUsername.toLowerCase() !== streamerUsername.toLowerCase()) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 403 })
-    }
+    // SECURITY FIX: ownership was previously verified against the
+    // `kick_username` cookie, which is NOT httpOnly and can be freely
+    // edited in the browser. Any logged-in streamer could rewrite that
+    // cookie to another streamer's name and grant themselves unlimited
+    // passes. We now verify against the server-validated session instead.
+    const auth = await requireOwnStreamer(request, streamerUsername)
+    if (auth.error) return auth.error
 
     const { data: streamer } = await supabase
       .from('streamers')
@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur creation chatter' }, { status: 500 })
     }
 
-    const passAmount = parseInt(amount) || 1
+    // Bound the amount so a compromised/careless dashboard call can't mint
+    // an absurd number of passes in one request.
+    const passAmount = Math.min(Math.max(parseInt(amount) || 1, 1), 1000)
 
     const { data: existing } = await supabase
       .from('chatter_passes')

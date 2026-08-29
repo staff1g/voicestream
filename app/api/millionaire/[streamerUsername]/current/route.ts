@@ -44,5 +44,24 @@ export async function GET(
     timerRemaining = Math.max(0, 30 - elapsed)
   }
 
-  return NextResponse.json({ game: { ...game, timer_remaining: timerRemaining }, question })
+  // SECURITY FIX: this is a public, unauthenticated endpoint (viewer overlay
+  // polls it during the live game). It was returning the full question row
+  // via select('*'), which includes `correct_option` - so anyone could read
+  // the right answer straight from the API before choosing. Only send the
+  // fields the overlay actually needs to render the question, and only
+  // reveal correct_option once the game has already recorded an answer for
+  // this question (i.e. after the reveal, matching what the UI shows).
+  const alreadyRevealed = game.last_answer_status !== null && game.last_answer_status !== undefined
+  const safeQuestion = question ? {
+    id: question.id,
+    level: question.level,
+    question: question.question,
+    option_a: question.option_a,
+    option_b: question.option_b,
+    option_c: question.option_c,
+    option_d: question.option_d,
+    correct_option: alreadyRevealed ? question.correct_option : null,
+  } : null
+
+  return NextResponse.json({ game: { ...game, timer_remaining: timerRemaining }, question: safeQuestion })
 }

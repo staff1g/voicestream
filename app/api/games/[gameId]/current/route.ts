@@ -35,13 +35,19 @@ export async function GET(
     .eq('game_id', gameId)
     .order('points', { ascending: false })
 
+  // SECURITY FIX: this is a public, unauthenticated endpoint (viewers/overlay
+  // poll it while the game is in progress). It was returning `secret_answer`
+  // in the plain JSON response, so anyone could just read the API response
+  // and get the answer instantly. Only expose it once the game is finished.
+  const revealAnswer = game.status === 'finished'
+
   return NextResponse.json({
     game,
     question: question ? {
       hint: question.hint,
       length: question.secret_answer.length,
       answered_by: question.answered_by,
-      secret_answer: question.secret_answer,
+      secret_answer: revealAnswer ? question.secret_answer : null,
       image_url: question.image_url,
     } : null,
     totalQuestions: totalQuestions?.length || 0,

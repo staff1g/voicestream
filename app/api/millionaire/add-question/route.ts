@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireStreamer } from '@/lib/auth'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-  const auth = await requireStreamer(request)
-  if (auth.error) return auth.error
-
     const { streamerUsername, question, optionA, optionB, optionC, optionD, correctOption, amount } = await request.json()
 
     if (!streamerUsername || !question) {
       return NextResponse.json({ error: 'Donnees manquantes' }, { status: 400 })
     }
+
+    // SECURITY FIX: verify caller owns this streamer account (IDOR fix)
+    const auth = await requireOwnStreamer(request, streamerUsername)
+    if (auth.error) return auth.error
 
     const { data: streamer } = await supabase
       .from('streamers')

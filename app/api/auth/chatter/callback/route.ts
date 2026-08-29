@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { createSession } from '@/lib/session'
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+// SECURITY FIX: matches the new server-side session TTL in lib/session.ts
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create secure session
-    const session = await createSession(chatterId, user.name, 'chatter')
+    const session = await createSession(chatterId, user.name, 'chatter', request.headers.get('user-agent') || undefined)
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/streamers`)
     const sameSite = 'lax' as const

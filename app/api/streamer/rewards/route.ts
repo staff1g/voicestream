@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireStreamer } from '@/lib/auth'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
-  const auth = await requireStreamer(request)
-  if (auth.error) return auth.error
-
   const username = request.nextUrl.searchParams.get('username')
 
   if (!username) {
     return NextResponse.json({ error: 'Username manquant' }, { status: 400 })
   }
+
+  // SECURITY FIX: verify caller owns this streamer account (IDOR fix) -
+  // this endpoint returns the streamer's Kick channel reward data.
+  const auth = await requireOwnStreamer(request, username)
+  if (auth.error) return auth.error
 
   const { data: streamer } = await supabase
     .from('streamers')

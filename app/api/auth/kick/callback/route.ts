@@ -3,7 +3,10 @@ import { supabase } from '@/lib/supabase'
 import { createSession } from '@/lib/session'
 import { sendApprovalEmail } from '@/lib/email'
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+// SECURITY FIX: matches the new server-side session TTL in lib/session.ts
+// (30-day sliding window) - no point keeping a browser cookie alive far
+// longer than the server will actually honor it.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -80,7 +83,7 @@ export async function GET(request: NextRequest) {
       console.log('New streamer registered (pending):', user.name)
 
       try {
-        await sendApprovalEmail(user.name, String(user.user_id))
+        await sendApprovalEmail(user.name, String(user.user_id), streamerId)
         console.log('Approval email sent for:', user.name)
       } catch (emailError) {
         console.error('Failed to send approval email:', emailError)
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create secure session
-    const session = await createSession(streamerId, user.name, 'streamer')
+    const session = await createSession(streamerId, user.name, 'streamer', request.headers.get('user-agent') || undefined)
 
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard`)
     const sameSite = 'lax' as const

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import crypto from 'crypto'
 
-//  Kick's RSA public key (from https://api.kick.com/public/v1/public-key) 
+// ─── Kick's RSA public key (from https://api.kick.com/public/v1/public-key) ──
 
 const KICK_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq/+l1WnlRrGSolDMA+A8
@@ -16,7 +16,7 @@ twIDAQAB
 
 const MAX_AGE_MS = 5 * 60 * 1000 // 5 minutes replay window
 
-// Signature verification
+// ─── Signature verification ─────────────────────────────────────────
 
 async function verifyWebhook(request: NextRequest): Promise<{ body: any; eventType: string } | NextResponse> {
   const signature = request.headers.get('Kick-Event-Signature')
@@ -61,7 +61,7 @@ async function verifyWebhook(request: NextRequest): Promise<{ body: any; eventTy
   return { body, eventType }
 }
 
-// Main handler
+// ─── Main handler ───────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-//  Helpers (unchanged) 
+// ─── Helpers (unchanged) ────────────────────────────────────────────
 
 async function findOrCreateChatter(kickUserId: string, username: string) {
   const { data: existing } = await supabase

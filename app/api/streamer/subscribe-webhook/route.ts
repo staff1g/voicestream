@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getValidToken } from '@/lib/kickAuth'
-import { requireStreamer } from '@/lib/auth'
+import { requireOwnStreamer } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-  const auth = await requireStreamer(request)
-  if (auth.error) return auth.error
-
     const { username, rewardId } = await request.json()
 
     if (!username) {
       return NextResponse.json({ error: 'Username manquant' }, { status: 400 })
     }
+
+    // SECURITY FIX: verify caller owns this streamer account (IDOR fix) -
+    // this endpoint changes another account's reward_id and re-subscribes
+    // their Kick channel to webhook events using their own access token.
+    const auth = await requireOwnStreamer(request, username)
+    if (auth.error) return auth.error
 
     const { data: streamer } = await supabase
       .from('streamers')

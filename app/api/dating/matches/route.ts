@@ -6,10 +6,13 @@ export async function GET(request: NextRequest) {
   const auth = await requireChatter(request)
   if (auth.error) return auth.error
 
-  const chatterUsername = request.nextUrl.searchParams.get('chatter')
+  // SECURITY FIX: identity comes from the session, never from the
+  // client-supplied `chatter` query param - previously any chatter could
+  // pass someone else's username and read their matches' Discord handles.
+  const chatterUsername = auth.session.username
   const streamerUsername = request.nextUrl.searchParams.get('streamer')
 
-  if (!chatterUsername || !streamerUsername) {
+  if (!streamerUsername) {
     return NextResponse.json({ error: 'Params manquants' }, { status: 400 })
   }
 

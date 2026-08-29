@@ -3,6 +3,12 @@ import { supabase } from '@/lib/supabase'
 import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
+  // SECURITY FIX: this route imported requireAuth but never called it,
+  // making it fully public. It's only ever used by the app to fetch the
+  // logged-in user's own profile, so require a valid session.
+  const auth = await requireAuth(request)
+  if (auth.error) return auth.error
+
   const username = request.nextUrl.searchParams.get('username')
   const role = request.nextUrl.searchParams.get('role') || 'chatter'
 
@@ -27,8 +33,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-  const auth = await requireAuth(request)
-  if (auth.error) return auth.error
+    const auth = await requireAuth(request)
+    if (auth.error) return auth.error
 
     const form = await request.formData()
     const username = form.get('username') as string
@@ -38,6 +44,17 @@ export async function POST(request: NextRequest) {
 
     if (!username) {
       return NextResponse.json({ error: 'Username manquant' }, { status: 400 })
+    }
+
+    // SECURITY FIX: `username`/`role` came from the form body and were
+    // never checked against the session, so any authenticated user could
+    // overwrite another account's bio/profile picture by just naming them
+    // in the request. Verify the caller is editing their own profile.
+    if (
+      auth.session.role !== role ||
+      auth.session.username.toLowerCase() !== username.toLowerCase()
+    ) {
+      return NextResponse.json({ error: 'Interdit' }, { status: 403 })
     }
 
     const table = role === 'streamer' ? 'streamers' : 'chatters'
