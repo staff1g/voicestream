@@ -1,36 +1,65 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { requireOwnStreamer } from '@/lib/auth'
-
-export async function GET(request: NextRequest) {
-  const username = request.nextUrl.searchParams.get('username')
-
-  if (!username) {
-    return NextResponse.json({ error: 'Username manquant' }, { status: 400 })
-  }
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase'; 
+import { validateSession } from '@/lib/session';
 
   // SECURITY FIX: verify caller owns this streamer account (IDOR fix) -
   // this endpoint previously let any streamer read another streamer's
   // pending voice-message queue.
-  const auth = await requireOwnStreamer(request, username)
-  if (auth.error) return auth.error
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get('username');
+    const token = searchParams.get('token');
 
-  const { data: streamer } = await supabase
-    .from('streamers')
-    .select('id')
-    .eq('username', username)
-    .single()
+    if (!username) {
+      return NextResponse.json({ error: 'Missing username parameter' }, { status: 400 });
+    }
 
-  if (!streamer) {
-    return NextResponse.json({ queue: [] })
+    let isAuthorized = false;
+
+    //  Authenticate via OBS Overlay Token (No cookies required)
+    if (token) {
+      const { data: streamer } = await supabase
+        .from('streamers')
+        .select('id, overlay_token')
+        .ilike('username', username)
+        .single();
+
+      if (streamer && streamer.overlay_token === token) {
+        isAuthorized = true;
+      }
+    }
+
+    // Fallback to session authentication (Dashboard use)
+    if (!isAuthorized) {
+      const sessionCookie = request.cookies.get('bez_session')?.value;
+      if (sessionCookie) {
+        const session = await validateSession(sessionCookie);
+        if (session && session.username.toLowerCase() === username.toLowerCase()) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Retrieve unplayed voice queue for the streamer
+    const { data: queue, error } = await supabase
+      .from('voice_queue')
+      .select('*, streamers!inner(username)')
+      .ilike('streamers.username', username)
+      .eq('played', false)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: 'Failed to fetch queue' }, { status: 500 });
+    }
+
+    return NextResponse.json({ queue: queue || [] });
+  } catch (err) {
+    console.error('[Queue API] Error:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  const { data: queue } = await supabase
-    .from('voice_queue')
-    .select('*')
-    .eq('streamer_id', streamer.id)
-    .eq('played', false)
-    .order('created_at', { ascending: true })
-
-  return NextResponse.json({ queue: queue || [] })
 }
