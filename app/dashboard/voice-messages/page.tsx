@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 export default function Dashboard() {
   const [username, setUsername] = useState('')
+  const [overlayToken, setOverlayToken] = useState('')
   const [queue, setQueue] = useState<any[]>([])
   const [origin, setOrigin] = useState('')
   const [rewardId, setRewardId] = useState('')
@@ -25,10 +26,21 @@ export default function Dashboard() {
     if (!name) return
     const decoded = decodeURIComponent(name)
     setUsername(decoded)
+    fetchOverlayToken(decoded)
     fetchQueue(decoded)
     fetchChatters(decoded)
     fetchRewards(decoded)
   }, [])
+
+  async function fetchOverlayToken(name: string) {
+    try {
+      const res = await fetch(`/api/streamer/token?username=${encodeURIComponent(name)}`)
+      const data = await res.json()
+      if (data.token) {
+        setOverlayToken(data.token)
+      }
+    } catch {}
+  }
 
   async function fetchRewards(name: string) {
     try {
@@ -100,7 +112,8 @@ export default function Dashboard() {
   }
 
   function copyObsLink() {
-    const obsUrl = `${origin}/obs-overlay.html?streamer=${username}&server=${origin}`
+    const tokenParam = overlayToken ? `&token=${encodeURIComponent(overlayToken)}` : ''
+    const obsUrl = `${origin}/obs-overlay.html?streamer=${username}&server=${origin}${tokenParam}`
     navigator.clipboard.writeText(obsUrl)
     setObsCopied(true)
     setTimeout(() => setObsCopied(false), 2000)
@@ -119,15 +132,15 @@ export default function Dashboard() {
           <span className="text-gray-400">@{username}</span>
         </div>
 
-
         <div className="bg-gray-900 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold mb-2">OBS Browser Source</h2>
           <p className="text-gray-400 text-sm mb-3">Copie ce lien dans OBS :</p>
           <button
             onClick={copyObsLink}
-            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold"
+            disabled={!overlayToken}
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg px-4 py-2 text-sm font-semibold"
           >
-            {obsCopied ? 'Copie !' : 'Copier le lien OBS'}
+            {obsCopied ? 'Copie !' : !overlayToken ? 'Chargement...' : 'Copier le lien OBS'}
           </button>
         </div>
 

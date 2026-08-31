@@ -100,14 +100,16 @@
 <audio id="player"></audio>
 
 <script>
-  const STREAMER = new URLSearchParams(window.location.search).get('streamer')
-  const SERVER   = new URLSearchParams(window.location.search).get('server') || window.location.origin
+  const urlParams = new URLSearchParams(window.location.search)
+  const STREAMER  = urlParams.get('streamer')
+  const TOKEN     = urlParams.get('token')
+  const SERVER    = urlParams.get('server') || window.location.origin
 
-  const popup    = document.getElementById('popup')
+  const popup      = document.getElementById('popup')
   const usernameEl = document.getElementById('username')
-  const player   = document.getElementById('player')
-  const waveform = document.getElementById('waveform')
-  const micIcon  = document.getElementById('mic-icon')
+  const player     = document.getElementById('player')
+  const waveform   = document.getElementById('waveform')
+  const micIcon    = document.getElementById('mic-icon')
 
   let playing = false
   let queue = []
@@ -119,11 +121,23 @@
     if (fetchingNow) return
     fetchingNow = true
     try {
-      const res = await fetch(`${SERVER}/api/queue?username=${STREAMER}`)
+      const endpoint = new URL(`${SERVER}/api/queue`)
+      if (STREAMER) endpoint.searchParams.append('username', STREAMER)
+      if (TOKEN) endpoint.searchParams.append('token', TOKEN)
+
+      const res = await fetch(endpoint.toString())
+      if (!res.ok) {
+        console.error(`[OBS Overlay] Queue fetch failed. HTTP Status: ${res.status}`)
+        fetchingNow = false
+        return
+      }
+
       const data = await res.json()
       queue = (data.queue || []).filter(m => !playedIds.has(m.id) && !markingPlayed.has(m.id))
       if (!playing) playNext()
-    } catch {}
+    } catch (err) {
+      console.error('[OBS Overlay] Fetch queue exception:', err)
+    }
     fetchingNow = false
   }
 
@@ -147,7 +161,10 @@
 
     const audioUrl = msg.file_url.startsWith('http') ? msg.file_url : `${SERVER}${msg.file_url}`
     player.src = audioUrl
-    player.play().catch(() => markPlayed(msg.id))
+    player.play().catch(err => {
+      console.error('[OBS Overlay] Audio play failed, marking as played:', err)
+      markPlayed(msg.id)
+    })
     player.onended = () => markPlayed(msg.id)
   }
 
@@ -169,10 +186,16 @@
         const res = await fetch(`${SERVER}/api/voice/played`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ id, token: TOKEN })
         })
-        if (res.ok) success = true
-      } catch {}
+        if (res.ok) {
+          success = true
+        } else {
+          console.error(`[OBS Overlay] Mark played HTTP error (attempt ${attempt + 1}): ${res.status}`)
+        }
+      } catch (err) {
+        console.error(`[OBS Overlay] Mark played fetch exception (attempt ${attempt + 1}):`, err)
+      }
       if (!success) await new Promise(r => setTimeout(r, 500))
     }
 

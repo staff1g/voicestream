@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 
 export default function Dashboard() {
   const [username, setUsername] = useState('')
+  const [showPopup, setShowPopup] = useState(false)
 
   useEffect(() => {
+    // Handle Username
     const name = document.cookie
       .split('; ')
       .find(r => r.startsWith('kick_username='))
@@ -14,11 +16,26 @@ export default function Dashboard() {
     if (name) {
       setUsername(decodeURIComponent(name))
     }
+
+    //  Handle OBS Update Popup check
+    const hasDismissedPopup = localStorage.getItem('obs_auth_update_dismissed')
+    if (!hasDismissedPopup) {
+      setShowPopup(true)
+    }
   }, [])
 
   async function logout() {
     await fetch('/api/auth/session', { method: 'DELETE' })
     window.location.href = '/'
+  }
+
+  function closePopup() {
+    setShowPopup(false)
+  }
+
+  function neverShowAgain() {
+    localStorage.setItem('obs_auth_update_dismissed', 'true')
+    setShowPopup(false)
   }
 
   const tools = [
@@ -131,6 +148,45 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* UPDATE NOTIFICATION POPUP */}
+      {showPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 border border-purple-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
+            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-4 border border-purple-500/30">
+              <i className="ti ti-alert-triangle text-2xl text-purple-400"></i>
+            </div>
+            
+            <h3 className="text-xl font-bold text-white mb-2">Mise à jour requise</h3>
+            
+           <p className="text-gray-300 text-sm mb-6 leading-relaxed">
+           Suite à une mise à jour de sécurité, tu dois récupérer ton{" "}
+           <strong className="inline-flex items-center rounded-md bg-amber-500/15 px-1.5 py-0.5 text-base font-semibold text-amber-400 ring-1 ring-inset ring-amber-500/20">
+             nouveau lien OBS
+           </strong>{" "}
+           depuis l'outil "Voice messages" pour que l'overlay continue de fonctionner.
+           <span className="mt-2 block font-medium text-gray-200">
+             L'ancien lien ne marchera plus.
+           </span>
+</p>
+            
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={closePopup}
+                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Fermer
+              </button>
+              <button
+                onClick={neverShowAgain}
+                className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors shadow-lg shadow-purple-600/20"
+              >
+                Ne plus afficher
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
